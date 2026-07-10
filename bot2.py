@@ -13,11 +13,23 @@ from aiogram.types import (
 )
 from aiogram.enums import ParseMode
 from aiohttp import web
+import os
+import ast
 
 # ==================== НАСТРОЙКИ ====================
-BOT_TOKEN = "8836517290:AAETyqPVomHUFvgTUnBIzNfBGqCUw6ufAps"
-ADMIN_CHAT_ID = [2141285479, 5261296528]
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
+# Проверка, что токен задан
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден в переменных окружения!")
+
+# Преобразуем ADMIN_CHAT_ID из строки в список
+if isinstance(ADMIN_CHAT_ID, str):
+    ADMIN_CHAT_ID = ast.literal_eval(ADMIN_CHAT_ID)
+elif ADMIN_CHAT_ID is None:
+    raise ValueError("❌ ADMIN_CHAT_ID не найден в переменных окружения!")
+    
 # ==================== БАЗА ДАННЫХ ====================
 TRAIN_SERIES = {
     "Пассажирские электровозы": ["ЭП20", "ЭП1М", "ЭП1", "ЧС4Т", "ЧС4", "ЭП1П"],
@@ -1330,7 +1342,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 # URL твоего бота на Vercel (замени после деплоя)
-WEBHOOK_URL = "https://твой-проект.vercel.app/webhook"
+WEBHOOK_URL = "https://skzd-bot.vercel.app/webhook"
 WEBHOOK_PATH = "/webhook"
 
 async def on_startup(app):
