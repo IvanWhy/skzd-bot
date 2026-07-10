@@ -19,7 +19,7 @@ import ast
 # ==================== НАСТРОЙКИ ====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-CHANNEL_ID = os.getenv("-1003568577293")  # ID канала для публикаций
+CHANNEL_ID = os.getenv("CHANNEL_ID")  # ID канала для публикаций # ID канала для публикаций
 
 # Проверка, что токен задан
 if not BOT_TOKEN:
