@@ -1336,16 +1336,19 @@ async def admin_ban(callback: types.CallbackQuery):
     if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>")
     else: await callback.message.edit_text(callback.message.text + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>")
     await callback.answer("🚫 Пользователь забанен", show_alert=True)
-
+    
 # ==================== WEBHOOK ДЛЯ VERCEL ====================
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import uvicorn
 
-# URL твоего бота на Vercel (замени после деплоя)
+app = FastAPI()
+
 WEBHOOK_URL = "https://skzd-bot.vercel.app/webhook"
 WEBHOOK_PATH = "/webhook"
 
-async def on_startup(app):
+@app.on_event("startup")
+async def on_startup():
     """Настройка webhook при запуске"""
     await bot.set_webhook(
         url=WEBHOOK_URL,
@@ -1353,25 +1356,28 @@ async def on_startup(app):
     )
     print("✅ Webhook установлен!")
 
-async def on_shutdown(app):
+@app.on_event("shutdown")
+async def on_shutdown():
     """Удаление webhook при остановке"""
     await bot.delete_webhook()
     print(" Webhook удален!")
 
-# Создаем aiohttp приложение
-app = web.Application()
+@app.post("/webhook")
+async def webhook(request: Request):
+    """Обработка webhook от Telegram"""
+    try:
+        update_data = await request.json()
+        update = types.Update(**update_data)
+        await dp.feed_update(bot, update)
+        return JSONResponse({"ok": True})
+    except Exception as e:
+        print(f"Error processing update: {e}")
+        return JSONResponse({"ok": False}, status_code=500)
 
-# Настраиваем webhook handler
-SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
+@app.get("/")
+async def root():
+    """Главная страница"""
+    return {"message": "Bot is running!"}
 
-# Регистрируем startup/shutdown
-app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
-
-# Регистрируем приложение в aiogram
-setup_application(app, dp, bot=bot)
-
-# Запуск для Vercel
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
