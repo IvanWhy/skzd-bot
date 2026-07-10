@@ -19,6 +19,7 @@ import ast
 # ==================== НАСТРОЙКИ ====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+CHANNEL_ID = os.getenv("-1003568577293")  # ID канала для публикаций
 
 # Проверка, что токен задан
 if not BOT_TOKEN:
@@ -1307,12 +1308,40 @@ async def admin_publish(callback: types.CallbackQuery):
     uid = int(callback.data.split(":")[1])
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids:
-        await callback.answer("❌ У вас нет прав", show_alert=True); return
-    if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
-    else: await callback.message.edit_text(callback.message.text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
-    try: await bot.send_message(uid, "✅ Ваша информация одобрена администратором и скоро появится в канале!\n\nСпасибо за помощь каналу! 🚂")
-    except: pass
-    await callback.answer("✅ Пост одобрен", show_alert=True)
+        await callback.answer("❌ У вас нет прав", show_alert=True)
+        return
+    
+    # Получаем текст или caption сообщения
+    if callback.message.photo:
+        caption = callback.message.caption
+        # Отправляем фото в канал
+        if CHANNEL_ID:
+            await bot.send_photo(
+                chat_id=CHANNEL_ID,
+                photo=callback.message.photo[-1].file_id,
+                caption=caption
+            )
+        await callback.message.edit_caption(caption=caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
+    else:
+        text = callback.message.text
+        # Отправляем текст в канал
+        if CHANNEL_ID:
+            await bot.send_message(
+                chat_id=CHANNEL_ID,
+                text=text
+            )
+        await callback.message.edit_text(text=text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
+    
+    # Уведомляем пользователя
+    try:
+        await bot.send_message(
+            uid,
+            "✅ Ваша информация одобрена администратором и опубликована в канале!\n\nСпасибо за помощь каналу! "
+        )
+    except:
+        pass
+    
+    await callback.answer("✅ Пост опубликован в канале", show_alert=True)
 
 @dp.callback_query(F.data.startswith("reject:"))
 async def admin_reject(callback: types.CallbackQuery):
