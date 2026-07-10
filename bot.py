@@ -1510,9 +1510,27 @@ async def on_shutdown():
     await bot.delete_webhook()
     print(" Webhook удален!")
 
+webhook_installed = False  # Глобальная переменная
+
 @app.post("/webhook")
 async def webhook(request: Request):
-    """Обработка webhook от Telegram"""
+    global webhook_installed
+    
+    # Проверяем и устанавливаем webhook при каждом запросе
+    if not webhook_installed:
+        try:
+            webhook_info = await bot.get_webhook_info()
+            if webhook_info.url != WEBHOOK_URL:
+                await bot.set_webhook(
+                    url=WEBHOOK_URL,
+                    allowed_updates=dp.resolve_used_update_types(),
+                )
+                print("✅ Webhook переустановлен!")
+            webhook_installed = True
+        except Exception as e:
+            print(f"❌ Ошибка установки webhook: {e}")
+    
+    # Обрабатываем обновление
     try:
         update_data = await request.json()
         update = types.Update(**update_data)
