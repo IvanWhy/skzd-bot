@@ -1311,32 +1311,38 @@ async def admin_publish(callback: types.CallbackQuery):
         await callback.answer("❌ У вас нет прав", show_alert=True)
         return
     
-    # Получаем текст или caption сообщения
     if callback.message.photo:
         caption = callback.message.caption
-        # Отправляем фото в канал
+        # Отправляем фото в канал С parse_mode
         if CHANNEL_ID:
             await bot.send_photo(
                 chat_id=CHANNEL_ID,
                 photo=callback.message.photo[-1].file_id,
-                caption=caption
+                caption=caption,
+                parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
             )
-        await callback.message.edit_caption(caption=caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
+        await callback.message.edit_caption(
+            caption=caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
+            parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+        )
     else:
         text = callback.message.text
-        # Отправляем текст в канал
+        # Отправляем текст в канал С parse_mode
         if CHANNEL_ID:
             await bot.send_message(
                 chat_id=CHANNEL_ID,
-                text=text
+                text=text,
+                parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
             )
-        await callback.message.edit_text(text=text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>")
+        await callback.message.edit_text(
+            text=text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
+            parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+        )
     
-    # Уведомляем пользователя
     try:
         await bot.send_message(
             uid,
-            "✅ Ваша информация одобрена администратором и опубликована в канале!\n\nСпасибо за помощь каналу! "
+            "✅ Ваша информация одобрена администратором и опубликована в канале!\n\nСпасибо за помощь каналу! 🚂"
         )
     except:
         pass
@@ -1402,8 +1408,21 @@ async def webhook(request: Request):
     except Exception as e:
         print(f"Error processing update: {e}")
         return JSONResponse({"ok": False}, status_code=500)
+        
+# Игнорируем эти ошибки
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+
+@dp.errors()
+async def errors_handler(event: types.ErrorEvent):
+    if isinstance(event.exception, TelegramBadRequest):
+        if "message is not modified" in str(event.exception):
+            return True  # Игнорируем
+        if "query is too old" in str(event.exception):
+            return True  # Игнорируем
+    return False
 
 @app.get("/")
+
 async def root():
     """Главная страница"""
     return {"message": "Bot is running!"}
