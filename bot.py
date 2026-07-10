@@ -1319,11 +1319,11 @@ async def admin_publish(callback: types.CallbackQuery):
                 chat_id=CHANNEL_ID,
                 photo=callback.message.photo[-1].file_id,
                 caption=caption,
-                parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+                parse_mode=ParseMode.HTML
             )
         await callback.message.edit_caption(
             caption=caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
-            parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+            parse_mode=ParseMode.HTML
         )
     else:
         text = callback.message.text
@@ -1332,11 +1332,11 @@ async def admin_publish(callback: types.CallbackQuery):
             await bot.send_message(
                 chat_id=CHANNEL_ID,
                 text=text,
-                parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+                parse_mode=ParseMode.HTML
             )
         await callback.message.edit_text(
             text=text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
-            parse_mode=ParseMode.HTML  ← ДОБАВИТЬ
+            parse_mode=ParseMode.HTML
         )
     
     try:
