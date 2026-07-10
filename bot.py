@@ -19,7 +19,7 @@ import ast
 # ==================== НАСТРОЙКИ ====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-CHANNEL_ID = os.getenv("CHANNEL_ID")  # ID канала для публикаций # ID канала для публикаций
+CHANNEL_ID = os.getenv("CHANNEL_ID")  # ID канала для публикаций
 
 # Проверка, что токен задан
 if not BOT_TOKEN:
@@ -30,7 +30,7 @@ if isinstance(ADMIN_CHAT_ID, str):
     ADMIN_CHAT_ID = ast.literal_eval(ADMIN_CHAT_ID)
 elif ADMIN_CHAT_ID is None:
     raise ValueError("❌ ADMIN_CHAT_ID не найден в переменных окружения!")
-    
+
 # ==================== БАЗА ДАННЫХ ====================
 TRAIN_SERIES = {
     "Пассажирские электровозы": ["ЭП20", "ЭП1М", "ЭП1", "ЧС4Т", "ЧС4", "ЭП1П"],
@@ -83,40 +83,97 @@ SCHEDULES = {
 }
 
 LOCO_NICKNAMES = {
-    "ЭП20-001": " «Олимп»🟠🔵", "ЭП20-002": " «Буревестник»🟢⚪️", "ЭП20-003": " «Новопид»⚫️🔴",
-    "ЭП20-004": " «Новопид»⚫️🔴", "ЭП20-005": " «Новопид»⚫️🔴", "ЭП20-006": " «Буревестник»🟢⚪️",
-    "ЭП20-007": " «Новопид»⚫️🔴", "ЭП20-008": " «Новопид»⚫️🔴", "ЭП20-009": " «Новопид»⚫️🔴",
-    "ЭП20-010": " «Новопид»⚫️🔴", "ЭП20-014": " «Новопид»⚫️🔴", "ЭП20-016": " «Новопид»⚫️🔴",
-    "ЭП20-022": " «Новопид»⚫️🔴", "ЭП20-046": " «Новопид»⚫️🔴", "ЭП20-047": " «Новопид»⚫️🔴",
-    "ЭП20-052": " «Новопид»⚫️🔴", "ЭП20-067": " «Новопид»⚫️🔴", "ЭП20-074": " «Новопид»⚫️🔴",
-    "2ЭС4К-036": "🟢", "2ЭС4К-055": "🟢", "2ЭС4К-066": "🟢", "2ЭС4К-106": "🟢", 
-    "2ЭС4К-121": "🟢", "2ЭС4К-131": "🟢",
-    "ЭП1М-411": "🔵 «Голубой»", "ЭП1М-423": "🔵 «Голубой»", "ЭП1М-437": "🔵 «Голубой»",
-    "ЭП1М-444": "🔵 «Голубой»", "ЭП1М-454": "🔵 «Голубой»", "ЭП1М-491": "🔵 «Голубой»",
-    "ЭП1М-525": "🔵 «Голубой»", "ЭП1М-549": "🔵 «Голубой»", "ЭП1М-555": "🔵 «Голубой»",
-    "ЭП1М-556": "🔵 «Голубой»", "ЭП1М-598": "🔵 «Голубой»", "ЭП1М-611": "🔵 «Голубой»",
-    "ЭП1М-637": "🔵 «Голубой»", "ЭП1М-651": "🟢🔵 «Жемчужина Кавказа»", "ЭП1М-662": "🔵 «Голубой»",
+    "ЭП20-001": " «Олимп»🟠🔵",
+    "ЭП20-002": " «Буревестник»🟢⚪️",
+    "ЭП20-003": " «Новопид»⚫️🔴",
+    "ЭП20-004": " «Новопид»⚫️🔴",
+    "ЭП20-005": " «Новопид»⚫️🔴",
+    "ЭП20-006": " «Буревестник»🟢⚪️",
+    "ЭП20-007": " «Новопид»⚫️🔴",
+    "ЭП20-008": " «Новопид»⚫️🔴",
+    "ЭП20-009": " «Новопид»⚫️🔴",
+    "ЭП20-010": " «Новопид»⚫️🔴",
+    "ЭП20-014": " «Новопид»⚫️🔴",
+    "ЭП20-016": " «Новопид»⚫️🔴",
+    "ЭП20-022": " «Новопид»️⚫️🔴",
+    "ЭП20-046": " «Новопид»️⚫️🔴",
+    "ЭП20-047": " «Новопид»️⚫️🔴",
+    "ЭП20-052": " «Новопид»⚫️🔴",
+    "ЭП20-067": " «Новопид»⚫️🔴",
+    "ЭП20-074": " «Новопид»⚫️🔴",
+    "2ЭС4К-036": "🟢",
+    "2ЭС4К-055": "🟢",
+    "2ЭС4К-066": "🟢",
+    "2ЭС4К-106": "🟢", 
+    "2ЭС4К-121": "🟢",
+    "2ЭС4К-131": "🟢",
+    "ЭП1М-411": "🔵 «Голубой»",
+    "ЭП1М-423": "🔵 «Голубой»",
+    "ЭП1М-437": "🔵 «Голубой»",
+    "ЭП1М-444": "🔵 «Голубой»",
+    "ЭП1М-454": "🔵 «Голубой»",
+    "ЭП1М-491": "🔵 «Голубой»",
+    "ЭП1М-525": "🔵 «Голубой»",
+    "ЭП1М-549": "🔵 «Голубой»",
+    "ЭП1М-555": "🔵 «Голубой»",
+    "ЭП1М-556": "🔵 «Голубой»",
+    "ЭП1М-598": "🔵 «Голубой»",
+    "ЭП1М-611": "🔵 «Голубой»",
+    "ЭП1М-637": "🔵 «Голубой»",
+    "ЭП1М-651": "🟢🔵 «Жемчужина Кавказа»",
+    "ЭП1М-662": "🔵 «Голубой»",
     "ЭП1М-688": "🟢🔵 «Жемчужина Кавказа»",
-    "3ЭС5К-1131": "🖤🔴 «НТС»", "3ЭС5К-1133": "🖤🔴 «НТС»", "3ЭС5К-1134": "🖤🔴 «НТС»",
-    "3ЭС5К-1135": "🖤🔴 «НТС»", "3ЭС5К-1136": "🖤🔴 «НТС»", "3ЭС5К-1137": "🖤🔴 «НТС»",
-    "3ЭС5К-1138": "🖤🔴 «НТС»", "3ЭС5К-1139": "🖤🔴 «НТС»", "3ЭС5К-1140": "🖤🔴 «НТС»",
-    "3ЭС5К-1141": "🖤🔴 «НТС»", "3ЭС5К-1142": "🖤🔴 «НТС»", "3ЭС5К-1143": "🖤🔴 «НТС»",
+    "3ЭС5К-1131": "🖤🔴 «НТС»",
+    "3ЭС5К-1133": "🖤🔴 «НТС»",
+    "3ЭС5К-1134": "🖤🔴 «НТС»",
+    "3ЭС5К-1135": "🖤🔴 «НТС»",
+    "3ЭС5К-1136": "🖤🔴 «НТС»",
+    "3ЭС5К-1137": "🖤🔴 «НТС»",
+    "3ЭС5К-1138": "🖤🔴 «НТС»",
+    "3ЭС5К-1139": "🖤🔴 «НТС»",
+    "3ЭС5К-1140": "🖤🔴 «НТС»",
+    "3ЭС5К-1141": "🖤🔴 «НТС»",
+    "3ЭС5К-1142": "🖤🔴 «НТС»",
+    "3ЭС5К-1143": "🖤🔴 «НТС»",
     "3ЭС5К-1144": "🖤🔴 «НТС»",
-    "2ЭС5К-555": "🔵 «ТрансОйл»", "2ЭС5К-556": "🔵 «ТрансОйл»", "2ЭС5К-557": "🔵 «ТрансОйл»",
-    "2ЭС5К-558": "🔵 «ТрансОйл»", "2ЭС5К-559": "🔵 «ТрансОйл»", "2ЭС5К-560": "🔵 «ТрансОйл»",
-    "2ЭС5К-561": "🔵 «ТрансОйл»", "2ЭС5К-562": "🔵 «ТрансОйл»", "2ЭС5К-563": "🔵 «ТрансОйл»",
-    "2ЭС5К-564": "🔵 «ТрансОйл»", "2ЭС5К-590": "🔵 «ТрансОйл»",
-    "ВЛ80С-1382": "🟢🟡 «ГЖД»", "ВЛ80С-1580": "🟢🟡 «ГЖД»", "ВЛ80С-1913": "🟢🟡 «ГЖД»",
-    "ВЛ80С-2127": "🟢🟡 «ГЖД»", "ВЛ80С-693": "🟢", "ВЛ80С-841": "🟢", "ВЛ80С-1097": "🟢",
-    "ВЛ80С-1226": "🟢", "ВЛ80С-1271": "🟢", "ВЛ80С-1311": "🟢", "ВЛ80С-1357": "🟢",
-    "ВЛ80С-1449": "🟢", "ВЛ80С-1732": "🟢", "ВЛ80С-2034": "🟢", "ВЛ80С-2051": "🟢",
-    "ВЛ80С-2196": "🟢", "ВЛ80С-2217": "🟢", "ВЛ80С-2221": "🟢", "ВЛ80С-2227": "🟢",
-    "ВЛ80С-2230": "🟢", "ВЛ80С-2241": "🟢", "ВЛ80С-2602": "🟢"
+    "2ЭС5К-555": "🔵 «ТрансОйл»",
+    "2ЭС5К-556": "🔵 «ТрансОйл»",
+    "2ЭС5К-557": "🔵 «ТрансОйл»",
+    "2ЭС5К-558": "🔵 «ТрансОйл»",
+    "2ЭС5К-559": "🔵 «ТрансОйл»",
+    "2ЭС5К-560": "🔵 «ТрансОйл»",
+    "2ЭС5К-561": "🔵 «ТрансОйл»",
+    "2ЭС5К-562": "🔵 «ТрансОйл»",
+    "2ЭС5К-563": "🔵 «ТрансОйл»",
+    "2ЭС5К-564": "🔵 «ТрансОйл»",
+    "2ЭС5К-590": "🔵 «ТрансОйл»",
+    "ВЛ80С-1382": "🟢🟡 «ГЖД»",
+    "ВЛ80С-1580": "🟢🟡 «ГЖД»",
+    "ВЛ80С-1913": "🟢🟡 «ГЖД»",
+    "ВЛ80С-2127": "🟢🟡 «ГЖД»",
+    "ВЛ80С-693": "🟢",
+    "ВЛ80С-841": "🟢",
+    "ВЛ80С-1097": "🟢",
+    "ВЛ80С-1226": "🟢",
+    "ВЛ80С-1271": "🟢",
+    "ВЛ80С-1311": "🟢",
+    "ВЛ80С-1357": "🟢",
+    "ВЛ80С-1449": "🟢",
+    "ВЛ80С-1732": "🟢",
+    "ВЛ80С-2034": "🟢",
+    "ВЛ80С-2051": "🟢",
+    "ВЛ80С-2196": "🟢",
+    "ВЛ80С-2217": "🟢",
+    "ВЛ80С-2221": "🟢",
+    "ВЛ80С-2227": "🟢",
+    "ВЛ80С-2230": "🟢",
+    "ВЛ80С-2241": "🟢",
+    "ВЛ80С-2602": "🟢"
 }
 
 BLACKLIST = set()
 
-# ==================== КОНСТАНТЫ КНОПОК (единый источник истины) ====================
+# ==================== КОНСТАНТЫ КНОПОК ====================
 BTN_ADD_MULTIPLE = "➕ Добавить еще один ПС"
 BTN_ADD_TRANSFER = "➕ Добавить еще перегоняемый"
 BTN_FINISH = "✅ Закончить"
@@ -190,6 +247,7 @@ class Form(StatesGroup):
     edit_transfer_train_number_manual = State()
 
 user_data = {}
+pending_publications = {}  # Сохраняем сообщение для канала: {user_id: {"text": ..., "photo_id": ...}}
 
 # ==================== ИНИЦИАЛИЗАЦИЯ ====================
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -238,9 +296,8 @@ def find_train_by_query(query: str):
             continue
     return results
 
-def build_summary(user_id: int) -> str:
-    data = user_data[user_id]
-    today = datetime.now().strftime("%d.%m.%Y")
+def build_train_info(data: dict) -> str:
+    """Формирует блок информации о поезде/сплотке/перегонке (для канала и админов)"""
     train_info = ""
     
     if data.get("is_multiple"):
@@ -268,7 +325,7 @@ def build_summary(user_id: int) -> str:
             elif transfer_train_type == BTN_PDS and transfer_train_number and transfer_train_number != BTN_NO_INFO:
                 if transfer_train_number in SCHEDULES:
                     schedule = SCHEDULES[transfer_train_number]
-                    train_info += f"  🚆 Под поездом {transfer_train_number} «{schedule['name']}» ({schedule['route']})\n  📅 <a href='{schedule['link']}'>Расписание</a>"
+                    train_info += f'  🚆 Под поездом {transfer_train_number} «{schedule["name"]}» ({schedule["route"]})\n  📅 <a href="{schedule["link"]}">Расписание</a>'
                 else:
                     train_info += f"  🚆 Под поездом {transfer_train_number}"
             else:
@@ -281,13 +338,21 @@ def build_summary(user_id: int) -> str:
             train_num = data["train_number"]
             if train_num in SCHEDULES:
                 schedule = SCHEDULES[train_num]
-                train_info = f"🚆 Поезд {train_num} «{schedule['name']}» ({schedule['route']})\n📅 <a href='{schedule['link']}'>Расписание</a>"
+                train_info = f'🚆 Поезд {train_num} «{schedule["name"]}» ({schedule["route"]})\n📅 <a href="{schedule["link"]}">Расписание</a>'
             else:
                 train_info = f"🚆 Поезд {train_num}"
         elif data["train_type"] == BTN_GRUZ:
             train_info = "🚛 Грузовой поезд"
         else:
             train_info = "🤷 Тип поезда неизвестен"
+    
+    return train_info
+
+def build_summary(user_id: int) -> str:
+    """Формирует итоговую анкету для пользователя (с заголовком проверки)"""
+    data = user_data[user_id]
+    today = datetime.now().strftime("%d.%m.%Y")
+    train_info = build_train_info(data)
     
     has_photo = "photo_id" in data
     summary = f"📋 <b>Проверьте правильность информации:</b>\n\n"
@@ -303,6 +368,33 @@ def build_summary(user_id: int) -> str:
         f"📸 <b>Фото:</b> {'есть' if has_photo else 'нет'}"
     )
     return summary
+
+def build_channel_message(data: dict) -> str:
+    """Формирует сообщение для публикации в канале (без заголовка 'Новая заявка')"""
+    today = datetime.now().strftime("%d.%m.%Y")
+    train_info = build_train_info(data)
+    
+    message = train_info + "\n"
+    message += f"🗺 <b>Направление:</b> {data['direction']}\n"
+    message += f"📌 <b>Место:</b> {format_station(data['station'])}\n"
+    message += f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
+    
+    return message
+
+def build_admin_message(data: dict, user) -> str:
+    """Формирует сообщение для админов (с заголовком 'Новая заявка')"""
+    today = datetime.now().strftime("%d.%m.%Y")
+    train_info = build_train_info(data)
+    
+    admin_msg = f"🚂 <b>Новая заявка от @{user.username or user.first_name}</b>\n\n"
+    if not (data.get("is_multiple") or data.get("is_transfer")):
+        admin_msg += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
+    admin_msg += f"{train_info}\n"
+    admin_msg += f"🗺 <b>Направление:</b> {data['direction']}\n"
+    admin_msg += f"📌 <b>Место:</b> {format_station(data['station'])}\n"
+    admin_msg += f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
+    
+    return admin_msg
 
 async def return_to_summary(message: types.Message, state: FSMContext, success_text: str):
     summary = build_summary(message.from_user.id)
@@ -838,50 +930,29 @@ async def no_photo_callback(callback: types.CallbackQuery, state: FSMContext):
 async def process_confirmation(message: types.Message, state: FSMContext):
     if message.text == "✅ Да, всё верно":
         data = user_data[message.from_user.id]
-        today = datetime.now().strftime("%d.%m.%Y")
         
-        train_info = ""
-        if data.get("is_multiple"):
-            units = data.get("multiple_units", [])
-            train_info = "🚂🚂 <b>Сплотка:</b>\n" + "\n".join([f"• {get_loco_name(u['series'], u['number'])}" for u in units]) if units else "🚂🚂 Сплотка (пусто)"
-        elif data.get("is_transfer"):
-            td = data.get("transfer_data", {})
-            main = td.get("main", {})
-            towed = td.get("towed", [])
-            t_type = data.get("transfer_train_type", BTN_NO_INFO)
-            t_num = data.get("transfer_train_number", "")
-            if main and towed:
-                train_info = f"➡️🚂 <b>Перегонка:</b>\n  🚂 Основной: {get_loco_name(main['series'], main['number'])}\n  🚂 Перегоняемые:\n" + "\n".join([f"  • {get_loco_name(u['series'], u['number'])}" for u in towed]) + "\n"
-                if t_type == BTN_GRUZ: train_info += "  🚛 Под грузовым поездом"
-                elif t_type == BTN_PDS and t_num and t_num != BTN_NO_INFO:
-                    if t_num in SCHEDULES:
-                        s = SCHEDULES[t_num]
-                        train_info += f"  🚆 Под поездом {t_num} «{s['name']}» ({s['route']})\n  📅 <a href='{s['link']}'>Расписание</a>"
-                    else: train_info += f"  🚆 Под поездом {t_num}"
-                else: train_info += "  🤷 Поезд неизвестен"
-            else: train_info = "➡️🚂 Перегонка (неполные данные)"
-        else:
-            if data["train_type"] == BTN_PDS and data["train_number"] != BTN_NO_INFO:
-                tn = data["train_number"]
-                if tn in SCHEDULES:
-                    s = SCHEDULES[tn]
-                    train_info = f"🚆 Поезд {tn} «{s['name']}» ({s['route']})\n📅 <a href='{s['link']}'>Расписание</a>"
-                else: train_info = f"🚆 Поезд {tn}"
-            elif data["train_type"] == BTN_GRUZ: train_info = "🚛 Грузовой поезд"
-            else: train_info = "🤷 Тип поезда неизвестен"
+        # Формируем сообщение ДЛЯ КАНАЛА (без заголовка "Новая заявка")
+        channel_msg = build_channel_message(data)
         
-        admin_msg = f"🚂 <b>Новая заявка от @{message.from_user.username or message.from_user.first_name}</b>\n\n"
-        if not (data.get("is_multiple") or data.get("is_transfer")):
-            admin_msg += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
-        admin_msg += f"{train_info}\n🗺 <b>Направление:</b> {data['direction']}\n📌 <b>Место:</b> {format_station(data['station'])}\n🕒 <b>Актуальность:</b> {data['time']} ({today})"
+        # Формируем сообщение ДЛЯ АДМИНОВ (с заголовком "Новая заявка")
+        admin_msg = build_admin_message(data, message.from_user)
         
-        has_photo = "photo_id" in data
+        # Сохраняем сообщение для канала (чтобы потом опубликовать)
+        pending_publications[message.from_user.id] = {
+            "text": channel_msg,
+            "photo_id": data.get("photo_id")
+        }
+        
+        # Отправляем админам
         admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
         for aid in admin_ids:
             try:
-                if has_photo: await bot.send_photo(aid, photo=data["photo_id"], caption=admin_msg, reply_markup=get_admin_keyboard(message.from_user.id))
-                else: await bot.send_message(aid, admin_msg, reply_markup=get_admin_keyboard(message.from_user.id))
-            except Exception as e: logging.error(f"Ошибка отправки админу {aid}: {e}")
+                if data.get("photo_id"):
+                    await bot.send_photo(aid, photo=data["photo_id"], caption=admin_msg, reply_markup=get_admin_keyboard(message.from_user.id))
+                else:
+                    await bot.send_message(aid, admin_msg, reply_markup=get_admin_keyboard(message.from_user.id))
+            except Exception as e:
+                logging.error(f"Ошибка отправки админу {aid}: {e}")
         
         await message.answer("✅ Спасибо! Информация отправлена администраторам.\n\nЧтобы отправить еще одну, напиши /start", reply_markup=types.ReplyKeyboardRemove())
         await state.clear()
@@ -1311,34 +1382,47 @@ async def admin_publish(callback: types.CallbackQuery):
         await callback.answer("❌ У вас нет прав", show_alert=True)
         return
     
+    # Берём сохранённое сообщение для канала (без "Новая заявка")
+    pub_data = pending_publications.pop(uid, None)
+    
+    if pub_data:
+        channel_text = pub_data["text"]
+        channel_photo = pub_data.get("photo_id")
+        
+        # Отправляем в канал сообщение БЕЗ заголовка "Новая заявка"
+        if CHANNEL_ID:
+            try:
+                if channel_photo:
+                    await bot.send_photo(
+                        chat_id=CHANNEL_ID,
+                        photo=channel_photo,
+                        caption=channel_text,
+                        parse_mode=ParseMode.HTML
+                    )
+                else:
+                    await bot.send_message(
+                        chat_id=CHANNEL_ID,
+                        text=channel_text,
+                        parse_mode=ParseMode.HTML
+                    )
+            except Exception as e:
+                logging.error(f"Ошибка публикации в канал: {e}")
+    
+    # Обновляем сообщение у админа
     if callback.message.photo:
         caption = callback.message.caption
-        # Отправляем фото в канал С parse_mode
-        if CHANNEL_ID:
-            await bot.send_photo(
-                chat_id=CHANNEL_ID,
-                photo=callback.message.photo[-1].file_id,
-                caption=caption,
-                parse_mode=ParseMode.HTML
-            )
         await callback.message.edit_caption(
             caption=caption + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
             parse_mode=ParseMode.HTML
         )
     else:
         text = callback.message.text
-        # Отправляем текст в канал С parse_mode
-        if CHANNEL_ID:
-            await bot.send_message(
-                chat_id=CHANNEL_ID,
-                text=text,
-                parse_mode=ParseMode.HTML
-            )
         await callback.message.edit_text(
             text=text + "\n\n✅ <b>ОДОБРЕНО И ОПУБЛИКОВАНО</b>",
             parse_mode=ParseMode.HTML
         )
     
+    # Уведомляем пользователя
     try:
         await bot.send_message(
             uid,
@@ -1354,24 +1438,53 @@ async def admin_reject(callback: types.CallbackQuery):
     uid = int(callback.data.split(":")[1])
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids:
-        await callback.answer("❌ У вас нет прав", show_alert=True); return
-    if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + "\n\n❌ <b>ОТКЛОНЕНО</b>")
-    else: await callback.message.edit_text(callback.message.text + "\n\n❌ <b>ОТКЛОНЕНО</b>")
+        await callback.answer("❌ У вас нет прав", show_alert=True)
+        return
+    
+    # Удаляем сохранённое сообщение (публикация не нужна)
+    pending_publications.pop(uid, None)
+    
+    if callback.message.photo:
+        await callback.message.edit_caption(
+            caption=callback.message.caption + "\n\n❌ <b>ОТКЛОНЕНО</b>",
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        await callback.message.edit_text(
+            callback.message.text + "\n\n❌ <b>ОТКЛОНЕНО</b>",
+            parse_mode=ParseMode.HTML
+        )
+    
     await callback.answer("❌ Пост отклонен", show_alert=True)
-    try: await bot.send_message(uid, "❌ Ваша информация показалась недостоверной. Пожалуйста, проверьте данные и отправьте заново.")
-    except: pass
+    try:
+        await bot.send_message(uid, "❌ Ваша информация показалась недостоверной. Пожалуйста, проверьте данные и отправьте заново.")
+    except:
+        pass
 
 @dp.callback_query(F.data.startswith("ban:"))
 async def admin_ban(callback: types.CallbackQuery):
     uid = int(callback.data.split(":")[1])
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids:
-        await callback.answer("❌ У вас нет прав", show_alert=True); return
-    BLACKLIST.add(uid)
-    if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>")
-    else: await callback.message.edit_text(callback.message.text + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>")
-    await callback.answer("🚫 Пользователь забанен", show_alert=True)
+        await callback.answer("❌ У вас нет прав", show_alert=True)
+        return
     
+    BLACKLIST.add(uid)
+    pending_publications.pop(uid, None)
+    
+    if callback.message.photo:
+        await callback.message.edit_caption(
+            caption=callback.message.caption + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>",
+            parse_mode=ParseMode.HTML
+        )
+    else:
+        await callback.message.edit_text(
+            callback.message.text + "\n\n🚫 <b>АВТОР ЗАБАНЕН</b>",
+            parse_mode=ParseMode.HTML
+        )
+    
+    await callback.answer("🚫 Пользователь забанен", show_alert=True)
+
 # ==================== WEBHOOK ДЛЯ VERCEL ====================
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -1408,7 +1521,7 @@ async def webhook(request: Request):
     except Exception as e:
         print(f"Error processing update: {e}")
         return JSONResponse({"ok": False}, status_code=500)
-        
+
 # Игнорируем эти ошибки
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
@@ -1416,13 +1529,12 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 async def errors_handler(event: types.ErrorEvent):
     if isinstance(event.exception, TelegramBadRequest):
         if "message is not modified" in str(event.exception):
-            return True  # Игнорируем
+            return True
         if "query is too old" in str(event.exception):
-            return True  # Игнорируем
+            return True
     return False
 
 @app.get("/")
-
 async def root():
     """Главная страница"""
     return {"message": "Bot is running!"}
