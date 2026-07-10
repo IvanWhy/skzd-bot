@@ -1535,6 +1535,7 @@ async def errors_handler(event: types.ErrorEvent):
     return False
 
 @app.get("/")
+@app.head("/")
 async def root():
     """Главная страница"""
     return {"message": "Bot is running!"}
