@@ -374,7 +374,13 @@ def build_channel_message(data: dict) -> str:
     today = datetime.now().strftime("%d.%m.%Y")
     train_info = build_train_info(data)
     
-    message = train_info + "\n"
+    message = ""
+    
+    # Добавляем блок ПС для одиночных заявок (не сплоток и не перегонок)
+    if not (data.get("is_multiple") or data.get("is_transfer")):
+        message += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
+    
+    message += train_info + "\n"
     message += f"🗺 <b>Направление:</b> {data['direction']}\n"
     message += f"📌 <b>Место:</b> {format_station(data['station'])}\n"
     message += f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
