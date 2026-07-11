@@ -19,13 +19,11 @@ import ast
 # ==================== НАСТРОЙКИ ====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-CHANNEL_ID = os.getenv("CHANNEL_ID")  # ID канала для публикаций
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
-# Проверка, что токен задан
 if not BOT_TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в переменных окружения!")
 
-# Преобразуем ADMIN_CHAT_ID из строки в список
 if isinstance(ADMIN_CHAT_ID, str):
     ADMIN_CHAT_ID = ast.literal_eval(ADMIN_CHAT_ID)
 elif ADMIN_CHAT_ID is None:
@@ -95,9 +93,9 @@ LOCO_NICKNAMES = {
     "ЭП20-010": " «Новопид»⚫️🔴",
     "ЭП20-014": " «Новопид»⚫️🔴",
     "ЭП20-016": " «Новопид»⚫️🔴",
-    "ЭП20-022": " «Новопид»️⚫️🔴",
-    "ЭП20-046": " «Новопид»️⚫️🔴",
-    "ЭП20-047": " «Новопид»️⚫️🔴",
+    "ЭП20-022": " «Новопид»⚫️🔴",
+    "ЭП20-046": " «Новопид»⚫️🔴",
+    "ЭП20-047": " «Новопид»⚫️🔴",
     "ЭП20-052": " «Новопид»⚫️🔴",
     "ЭП20-067": " «Новопид»⚫️🔴",
     "ЭП20-074": " «Новопид»⚫️🔴",
@@ -182,12 +180,27 @@ BTN_CANCEL_EDIT = "⬅️ Отмена"
 BTN_NONE_LIST = "❌ Ничего из списка"
 BTN_DELETE = "🗑 Удалить:"
 BTN_DELETE_TRANSFER = "🗑 Удалить перегоняемый:"
+BTN_ADD_DESCRIPTION = "✏️ Добавить описание"
+BTN_SKIP_DESCRIPTION = "⏭️ Пропустить"
+BTN_REJECT_FAKE = "❌ Недостоверно"
+BTN_REJECT_DUPLICATE = "🔁 Дубликат"
+BTN_REJECT_NO_PHOTO = "📷 Нет фото"
+BTN_REJECT_CUSTOM = "✏️ Своя причина"
+BTN_REJECT_CANCEL = "⬅️ Отмена"
 
-BTN_SPLOTKA = "Сплотка 🚂🚂"
-BTN_PEREGONKA = "Перегонка ➡️🚂"
-BTN_PDS = "ПДС (пассажирский)"
+BTN_PDS = "ПДС"
 BTN_GRUZ = "Грузовой поезд"
+BTN_REZERV = "Резерв"
+BTN_SPLOTKA = "Сплотка"
+BTN_PEREGONKA = "Перегонка"
 BTN_NO_INFO = "Нет информации"
+
+# Шаблоны причин отклонения
+REJECT_REASONS = {
+    "fake": "❌ Недостоверная информация",
+    "duplicate": "🔁 Дубликат (уже было)",
+    "nophoto": "📷 Нет фотоподтверждения",
+}
 
 # ==================== СОСТОЯНИЯ (FSM) ====================
 class Form(StatesGroup):
@@ -205,6 +218,7 @@ class Form(StatesGroup):
     waiting_time = State()
     waiting_photo = State()
     waiting_confirmation = State()
+    waiting_description = State()
     
     waiting_multiple_series_category = State()
     waiting_multiple_series = State()
@@ -247,7 +261,8 @@ class Form(StatesGroup):
     edit_transfer_train_number_manual = State()
 
 user_data = {}
-pending_publications = {}  # Сохраняем сообщение для канала: {user_id: {"text": ..., "photo_id": ...}}
+pending_publications = {}
+pending_rejections = {}
 
 # ==================== ИНИЦИАЛИЗАЦИЯ ====================
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -297,7 +312,7 @@ def find_train_by_query(query: str):
     return results
 
 def build_train_info(data: dict) -> str:
-    """Формирует блок информации о поезде/сплотке/перегонке (для канала и админов)"""
+    """Формирует блок информации о поезде/сплотке/перегонке"""
     train_info = ""
     
     if data.get("is_multiple"):
@@ -343,13 +358,15 @@ def build_train_info(data: dict) -> str:
                 train_info = f"🚆 Поезд {train_num}"
         elif data["train_type"] == BTN_GRUZ:
             train_info = "🚛 Грузовой поезд"
+        elif data["train_type"] == BTN_REZERV:
+            train_info = "🔄 Резерв (свой ход)"
         else:
             train_info = "🤷 Тип поезда неизвестен"
     
     return train_info
 
 def build_summary(user_id: int) -> str:
-    """Формирует итоговую анкету для пользователя (с заголовком проверки)"""
+    """Формирует итоговую анкету для пользователя"""
     data = user_data[user_id]
     today = datetime.now().strftime("%d.%m.%Y")
     train_info = build_train_info(data)
@@ -367,16 +384,19 @@ def build_summary(user_id: int) -> str:
         f"🕒 <b>Актуальность:</b> {data['time']} ({today})\n"
         f"📸 <b>Фото:</b> {'есть' if has_photo else 'нет'}"
     )
+    
+    if data.get("description"):
+        summary += f"\n\n📝 <b>Описание:</b> {data['description']}"
+    
     return summary
 
 def build_channel_message(data: dict) -> str:
-    """Формирует сообщение для публикации в канале (без заголовка 'Новая заявка')"""
+    """Формирует сообщение для публикации в канале"""
     today = datetime.now().strftime("%d.%m.%Y")
     train_info = build_train_info(data)
     
     message = ""
     
-    # Добавляем блок ПС для одиночных заявок (не сплоток и не перегонок)
     if not (data.get("is_multiple") or data.get("is_transfer")):
         message += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
     
@@ -385,10 +405,13 @@ def build_channel_message(data: dict) -> str:
     message += f"📌 <b>Место:</b> {format_station(data['station'])}\n"
     message += f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
     
+    if data.get("description"):
+        message += f"\n\n📝 <b>Описание:</b> {data['description']}"
+    
     return message
 
 def build_admin_message(data: dict, user) -> str:
-    """Формирует сообщение для админов (с заголовком 'Новая заявка')"""
+    """Формирует сообщение для админов"""
     today = datetime.now().strftime("%d.%m.%Y")
     train_info = build_train_info(data)
     
@@ -400,13 +423,16 @@ def build_admin_message(data: dict, user) -> str:
     admin_msg += f"📌 <b>Место:</b> {format_station(data['station'])}\n"
     admin_msg += f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
     
+    if data.get("description"):
+        admin_msg += f"\n\n📝 <b>Описание:</b> {data['description']}"
+    
     return admin_msg
 
 async def return_to_summary(message: types.Message, state: FSMContext, success_text: str):
     summary = build_summary(message.from_user.id)
     await message.answer(
         f"{success_text}\n\n{summary}",
-        reply_markup=get_confirmation_keyboard(),
+        reply_markup=get_confirmation_keyboard(with_description=True),
         disable_web_page_preview=True,
         parse_mode="HTML"
     )
@@ -431,6 +457,7 @@ def get_train_type_keyboard():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=BTN_PDS)],
         [KeyboardButton(text=BTN_GRUZ)],
+        [KeyboardButton(text=BTN_REZERV)],
         [KeyboardButton(text=BTN_SPLOTKA)],
         [KeyboardButton(text=BTN_PEREGONKA)],
         [KeyboardButton(text=BTN_NO_INFO)]
@@ -454,7 +481,13 @@ def get_stations_keyboard():
     keyboard.append([KeyboardButton(text="✏️ Ввести вручную")])
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
-def get_confirmation_keyboard():
+def get_confirmation_keyboard(with_description=False):
+    if with_description:
+        return ReplyKeyboardMarkup(keyboard=[
+            [KeyboardButton(text="✅ Да, всё верно")],
+            [KeyboardButton(text=BTN_ADD_DESCRIPTION)],
+            [KeyboardButton(text="❌ Нет, изменить")]
+        ], resize_keyboard=True)
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text="✅ Да, всё верно")],
         [KeyboardButton(text="❌ Нет, изменить")]
@@ -510,7 +543,15 @@ def get_edit_transfer_keyboard(transfer_data):
 
 def get_admin_keyboard(user_id):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Опубликовать", callback_data=f"publish:{user_id}"), InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject:{user_id}")],
+        [InlineKeyboardButton(text="✅ Опубликовать", callback_data=f"publish:{user_id}")],
+        [
+            InlineKeyboardButton(text=BTN_REJECT_FAKE, callback_data=f"reject:{user_id}:fake"),
+            InlineKeyboardButton(text=BTN_REJECT_DUPLICATE, callback_data=f"reject:{user_id}:duplicate"),
+        ],
+        [
+            InlineKeyboardButton(text=BTN_REJECT_NO_PHOTO, callback_data=f"reject:{user_id}:nophoto"),
+            InlineKeyboardButton(text=BTN_REJECT_CUSTOM, callback_data=f"reject:{user_id}:custom"),
+        ],
         [InlineKeyboardButton(text="🚫 Забанить автора", callback_data=f"ban:{user_id}")]
     ])
 
@@ -602,7 +643,7 @@ async def process_number(message: types.Message, state: FSMContext):
 @dp.message(Form.waiting_train_type)
 async def process_train_type(message: types.Message, state: FSMContext):
     tt = message.text
-    if tt not in [BTN_PDS, BTN_GRUZ, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
+    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
         await message.answer("❌ Пожалуйста, выбери тип поезда из списка:")
         return
     
@@ -616,6 +657,10 @@ async def process_train_type(message: types.Message, state: FSMContext):
     elif tt == BTN_GRUZ:
         user_data[message.from_user.id]["train_number"] = "Грузовой"
         await message.answer("🚛 В какую сторону едет поезд?", reply_markup=get_directions_keyboard())
+        await state.set_state(Form.waiting_direction)
+    elif tt == BTN_REZERV:
+        user_data[message.from_user.id]["train_number"] = "Резерв"
+        await message.answer("🔄 В какую сторону едет локомотив?", reply_markup=get_directions_keyboard())
         await state.set_state(Form.waiting_direction)
     elif tt == BTN_SPLOTKA:
         user_data[message.from_user.id]["is_multiple"] = True
@@ -922,14 +967,52 @@ async def time_now_callback(callback: types.CallbackQuery, state: FSMContext):
 @dp.message(Form.waiting_photo, F.photo)
 async def process_photo(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]["photo_id"] = message.photo[-1].file_id
-    await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(), disable_web_page_preview=True)
+    await message.answer(
+        build_summary(message.from_user.id),
+        reply_markup=get_confirmation_keyboard(with_description=True),
+        disable_web_page_preview=True
+    )
     await state.set_state(Form.waiting_confirmation)
 
 @dp.callback_query(F.data == "no_photo")
 async def no_photo_callback(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer(build_summary(callback.from_user.id), reply_markup=get_confirmation_keyboard(), disable_web_page_preview=True)
+    await callback.message.answer(
+        build_summary(callback.from_user.id),
+        reply_markup=get_confirmation_keyboard(with_description=True),
+        disable_web_page_preview=True
+    )
     await state.set_state(Form.waiting_confirmation)
     await callback.answer()
+
+# ==================== ОПИСАНИЕ ====================
+@dp.message(Form.waiting_confirmation, F.text == BTN_ADD_DESCRIPTION)
+async def ask_description(message: types.Message, state: FSMContext):
+    await message.answer(
+        "✏️ Напиши описание (до 500 символов).\n"
+        "Например: <i>Ехал с хвоста поезда, заметил на перегоне...</i>",
+        reply_markup=ReplyKeyboardMarkup(keyboard=[
+            [KeyboardButton(text=BTN_SKIP_DESCRIPTION)]
+        ], resize_keyboard=True)
+    )
+    await state.set_state(Form.waiting_description)
+
+@dp.message(Form.waiting_description)
+async def save_description(message: types.Message, state: FSMContext):
+    if message.text == BTN_SKIP_DESCRIPTION:
+        user_data[message.from_user.id]["description"] = None
+    else:
+        text = message.text.strip()
+        if len(text) > 500:
+            await message.answer("❌ Слишком длинно. Максимум 500 символов. Попробуй ещё раз:")
+            return
+        user_data[message.from_user.id]["description"] = text
+    
+    await message.answer(
+        build_summary(message.from_user.id),
+        reply_markup=get_confirmation_keyboard(with_description=True),
+        disable_web_page_preview=True
+    )
+    await state.set_state(Form.waiting_confirmation)
 
 # ==================== ПОДТВЕРЖДЕНИЕ ====================
 @dp.message(Form.waiting_confirmation)
@@ -937,19 +1020,14 @@ async def process_confirmation(message: types.Message, state: FSMContext):
     if message.text == "✅ Да, всё верно":
         data = user_data[message.from_user.id]
         
-        # Формируем сообщение ДЛЯ КАНАЛА (без заголовка "Новая заявка")
         channel_msg = build_channel_message(data)
-        
-        # Формируем сообщение ДЛЯ АДМИНОВ (с заголовком "Новая заявка")
         admin_msg = build_admin_message(data, message.from_user)
         
-        # Сохраняем сообщение для канала (чтобы потом опубликовать)
         pending_publications[message.from_user.id] = {
             "text": channel_msg,
             "photo_id": data.get("photo_id")
         }
         
-        # Отправляем админам
         admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
         for aid in admin_ids:
             try:
@@ -1015,7 +1093,7 @@ async def process_edit_what(message: types.Message, state: FSMContext):
         await message.answer("🕐 Введи новое время в формате <b>ЧЧ:ММ</b>:", reply_markup=types.ReplyKeyboardRemove())
         await state.set_state(Form.edit_time)
     elif choice == BTN_CANCEL_EDIT:
-        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(), disable_web_page_preview=True)
+        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(with_description=True), disable_web_page_preview=True)
         await state.set_state(Form.waiting_confirmation)
     else:
         await message.answer("❌ Пожалуйста, выбери поле из списка:", reply_markup=get_edit_fields_keyboard(is_mult, is_trans))
@@ -1041,7 +1119,7 @@ async def process_edit_multiple_action(message: types.Message, state: FSMContext
         else:
             await message.answer(f"🚂🚂 <b>Сплотка:</b>\n\n" + "\n".join([f"• {get_loco_name(u['series'], u['number'])}" for u in units]) + "\n\n✅ Локомотив удален\n\nВыбери действие:", reply_markup=get_edit_multiple_keyboard(units), parse_mode="HTML")
     elif action == BTN_BACK:
-        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(), disable_web_page_preview=True)
+        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(with_description=True), disable_web_page_preview=True)
         await state.set_state(Form.waiting_confirmation)
     else:
         await message.answer("❌ Пожалуйста, выбери действие:", reply_markup=get_edit_multiple_keyboard(units))
@@ -1105,7 +1183,7 @@ async def process_edit_transfer_action(message: types.Message, state: FSMContext
         else:
             await message.answer(f"➡️🚂 <b>Перегонка:</b>\n\n🚂 <b>Основной:</b> {get_loco_name(td['main']['series'], td['main']['number'])}\n🚂 <b>Перегоняемые:</b>\n" + "\n".join([f"  • {get_loco_name(u['series'], u['number'])}" for u in td['towed']]) + "\n\n✅ Удален\n\nВыбери действие:", reply_markup=get_edit_transfer_keyboard(td), parse_mode="HTML")
     elif action == BTN_BACK:
-        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(), disable_web_page_preview=True)
+        await message.answer(build_summary(message.from_user.id), reply_markup=get_confirmation_keyboard(with_description=True), disable_web_page_preview=True)
         await state.set_state(Form.waiting_confirmation)
     else:
         await message.answer("❌ Пожалуйста, выбери действие:", reply_markup=get_edit_transfer_keyboard(td))
@@ -1250,7 +1328,7 @@ async def edit_number(message: types.Message, state: FSMContext):
 @dp.message(Form.edit_train_type)
 async def edit_train_type(message: types.Message, state: FSMContext):
     tt = message.text
-    if tt not in [BTN_PDS, BTN_GRUZ, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
+    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
         await message.answer("❌ Пожалуйста, выбери тип поезда из списка:")
         return
     user_data[message.from_user.id]["train_type"] = tt
@@ -1262,6 +1340,11 @@ async def edit_train_type(message: types.Message, state: FSMContext):
         user_data[message.from_user.id]["is_multiple"] = False
         user_data[message.from_user.id]["is_transfer"] = False
         await return_to_summary(message, state, "✅ Тип изменён на <b>Грузовой поезд</b>")
+    elif tt == BTN_REZERV:
+        user_data[message.from_user.id]["train_number"] = "Резерв"
+        user_data[message.from_user.id]["is_multiple"] = False
+        user_data[message.from_user.id]["is_transfer"] = False
+        await return_to_summary(message, state, "✅ Тип изменён на <b>Резерв</b>")
     elif tt == BTN_SPLOTKA:
         user_data[message.from_user.id]["is_multiple"] = True
         user_data[message.from_user.id]["is_transfer"] = False
@@ -1388,14 +1471,12 @@ async def admin_publish(callback: types.CallbackQuery):
         await callback.answer("❌ У вас нет прав", show_alert=True)
         return
     
-    # Берём сохранённое сообщение для канала (без "Новая заявка")
     pub_data = pending_publications.pop(uid, None)
     
     if pub_data:
         channel_text = pub_data["text"]
         channel_photo = pub_data.get("photo_id")
         
-        # Отправляем в канал сообщение БЕЗ заголовка "Новая заявка"
         if CHANNEL_ID:
             try:
                 if channel_photo:
@@ -1414,7 +1495,6 @@ async def admin_publish(callback: types.CallbackQuery):
             except Exception as e:
                 logging.error(f"Ошибка публикации в канал: {e}")
     
-    # Обновляем сообщение у админа
     if callback.message.photo:
         caption = callback.message.caption
         await callback.message.edit_caption(
@@ -1428,7 +1508,6 @@ async def admin_publish(callback: types.CallbackQuery):
             parse_mode=ParseMode.HTML
         )
     
-    # Уведомляем пользователя
     try:
         await bot.send_message(
             uid,
@@ -1441,31 +1520,91 @@ async def admin_publish(callback: types.CallbackQuery):
 
 @dp.callback_query(F.data.startswith("reject:"))
 async def admin_reject(callback: types.CallbackQuery):
+    parts = callback.data.split(":")
+    uid = int(parts[1])
+    reason_code = parts[2] if len(parts) > 2 else None
+    
+    admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
+    if callback.from_user.id not in admin_ids:
+        await callback.answer("❌ У вас нет прав", show_alert=True)
+        return
+    
+    pending_publications.pop(uid, None)
+    
+    # Если выбрана готовая причина
+    if reason_code and reason_code in REJECT_REASONS:
+        reason_text = REJECT_REASONS[reason_code]
+        
+        if callback.message.photo:
+            await callback.message.edit_caption(
+                caption=callback.message.caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}",
+                parse_mode=ParseMode.HTML
+            )
+        else:
+            await callback.message.edit_text(
+                callback.message.text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}",
+                parse_mode=ParseMode.HTML
+            )
+        
+        try:
+            await bot.send_message(
+                uid,
+                f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\n"
+                "Вы можете отправить новую заявку командой /start",
+                parse_mode=ParseMode.HTML
+            )
+        except:
+            pass
+        
+        await callback.answer("❌ Заявка отклонена", show_alert=True)
+    
+    # Если "своя причина"
+    elif reason_code == "custom":
+        pending_rejections[uid] = {
+            "admin_id": callback.from_user.id,
+            "message_id": callback.message.message_id,
+            "chat_id": callback.message.chat.id,
+            "is_photo": bool(callback.message.photo),
+            "original_caption": callback.message.caption if callback.message.photo else None,
+            "original_text": callback.message.text if not callback.message.photo else None
+        }
+        await callback.message.answer(
+            "✏️ Напишите причину отклонения (до 300 символов):",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text=BTN_REJECT_CANCEL, callback_data=f"cancel_reject:{uid}")]
+            ])
+        )
+        await callback.answer()
+    
+    else:
+        # Старый формат
+        if callback.message.photo:
+            await callback.message.edit_caption(
+                caption=callback.message.caption + "\n\n❌ <b>ОТКЛОНЕНО</b>",
+                parse_mode=ParseMode.HTML
+            )
+        else:
+            await callback.message.edit_text(
+                callback.message.text + "\n\n❌ <b>ОТКЛОНЕНО</b>",
+                parse_mode=ParseMode.HTML
+            )
+        await callback.answer("❌ Пост отклонен", show_alert=True)
+        try:
+            await bot.send_message(uid, "❌ Ваша информация отклонена. Пожалуйста, проверьте данные и отправьте заново.")
+        except:
+            pass
+
+@dp.callback_query(F.data.startswith("cancel_reject:"))
+async def cancel_reject(callback: types.CallbackQuery):
     uid = int(callback.data.split(":")[1])
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids:
         await callback.answer("❌ У вас нет прав", show_alert=True)
         return
     
-    # Удаляем сохранённое сообщение (публикация не нужна)
-    pending_publications.pop(uid, None)
-    
-    if callback.message.photo:
-        await callback.message.edit_caption(
-            caption=callback.message.caption + "\n\n❌ <b>ОТКЛОНЕНО</b>",
-            parse_mode=ParseMode.HTML
-        )
-    else:
-        await callback.message.edit_text(
-            callback.message.text + "\n\n❌ <b>ОТКЛОНЕНО</b>",
-            parse_mode=ParseMode.HTML
-        )
-    
-    await callback.answer("❌ Пост отклонен", show_alert=True)
-    try:
-        await bot.send_message(uid, "❌ Ваша информация показалась недостоверной. Пожалуйста, проверьте данные и отправьте заново.")
-    except:
-        pass
+    pending_rejections.pop(uid, None)
+    await callback.message.delete()
+    await callback.answer("Отменено")
 
 @dp.callback_query(F.data.startswith("ban:"))
 async def admin_ban(callback: types.CallbackQuery):
@@ -1503,7 +1642,6 @@ WEBHOOK_PATH = "/webhook"
 
 @app.on_event("startup")
 async def on_startup():
-    """Настройка webhook при запуске"""
     await bot.set_webhook(
         url=WEBHOOK_URL,
         allowed_updates=dp.resolve_used_update_types(),
@@ -1512,17 +1650,15 @@ async def on_startup():
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    """Удаление webhook при остановке"""
     await bot.delete_webhook()
     print(" Webhook удален!")
 
-webhook_installed = False  # Глобальная переменная
+webhook_installed = False
 
 @app.post("/webhook")
 async def webhook(request: Request):
     global webhook_installed
     
-    # Проверяем и устанавливаем webhook при каждом запросе
     if not webhook_installed:
         try:
             webhook_info = await bot.get_webhook_info()
@@ -1536,7 +1672,6 @@ async def webhook(request: Request):
         except Exception as e:
             print(f"❌ Ошибка установки webhook: {e}")
     
-    # Обрабатываем обновление
     try:
         update_data = await request.json()
         update = types.Update(**update_data)
@@ -1546,7 +1681,6 @@ async def webhook(request: Request):
         print(f"Error processing update: {e}")
         return JSONResponse({"ok": False}, status_code=500)
 
-# Игнорируем эти ошибки
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
 @dp.errors()
@@ -1561,8 +1695,59 @@ async def errors_handler(event: types.ErrorEvent):
 @app.get("/")
 @app.head("/")
 async def root():
-    """Главная страница"""
     return {"message": "Bot is running!"}
+
+# ==================== ОБРАБОТЧИК ПРИЧИНЫ ОТКЛОНЕНИЯ ====================
+# ВАЖНО: этот обработчик должен быть в самом конце!
+@dp.message(F.text)
+async def handle_reject_reason(message: types.Message):
+    """Обработка причины отклонения от админа"""
+    admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
+    if message.from_user.id not in admin_ids:
+        return  # Не админ — пропускаем
+    
+    # Ищем ожидающее отклонение от этого админа
+    for uid, data in list(pending_rejections.items()):
+        if data["admin_id"] == message.from_user.id:
+            reason_text = message.text.strip()[:300]
+            
+            # Редактируем исходное сообщение с заявкой
+            try:
+                if data["is_photo"]:
+                    original_caption = data.get("original_caption") or ""
+                    new_caption = original_caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}"
+                    await bot.edit_message_caption(
+                        chat_id=data["chat_id"],
+                        message_id=data["message_id"],
+                        caption=new_caption,
+                        parse_mode=ParseMode.HTML
+                    )
+                else:
+                    original_text = data.get("original_text") or ""
+                    new_text = original_text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}"
+                    await bot.edit_message_text(
+                        chat_id=data["chat_id"],
+                        message_id=data["message_id"],
+                        text=new_text,
+                        parse_mode=ParseMode.HTML
+                    )
+            except Exception as e:
+                logging.error(f"Ошибка редактирования сообщения: {e}")
+            
+            # Уведомляем пользователя
+            try:
+                await bot.send_message(
+                    uid,
+                    f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\n"
+                    "Вы можете отправить новую заявку командой /start",
+                    parse_mode=ParseMode.HTML
+                )
+            except:
+                pass
+            
+            pending_rejections.pop(uid, None)
+            await message.answer("✅ Причина отклонения отправлена пользователю.")
+            return
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
