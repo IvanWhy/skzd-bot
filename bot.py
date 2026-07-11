@@ -56,28 +56,165 @@ DIRECTIONS = [
 ]
 
 SCHEDULES = {
-    "020С": {"name": "Тихий Дон", "route": "Москва — Ростов", "link": "https://rasp.yandex.ru/thread/R_020S_112"},
-    "019С": {"name": "Тихий Дон", "route": "Ростов - Москва", "link": "https://rasp.yandex.ru/thread/R_019S_112"},
-    "104В": {"name": "Двухэтажный состав", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_104V_112"},
-    "104Ж": {"name": "Двухэтажный состав", "route": "Адлер - Москва", "link": "https://rasp.yandex.ru/thread/R_104ZH_112"},
-    "102М": {"name": "Обычный ПДС", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_102M_112"},
-    "102С": {"name": "Обычный ПДС", "route": "Адлер - Москва", "link": "https://rasp.yandex.ru/thread/R_102S_112"},
-    "030С": {"name": "Премиум", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_030S_112"},
-    "030Й": {"name": "Премиум", "route": "Новороссийск - Москва", "link": "https://rasp.yandex.ru/thread/R_030J_112"},
-    "092М": {"name": "Таврия", "route": "Москва — Севастополь", "link": "https://rasp.yandex.ru/thread/R_092M_63438"},
-    "092С": {"name": "Таврия", "route": "Севастополь - Москва", "link": "https://rasp.yandex.ru/thread/R_092S_63438"},
+    SCHEDULES = {
+    # ==================== МОСКВА — КРЫМ ====================
     "028М": {"name": "Таврия/двухэтажный состав", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_028M_63438"},
-    "027С": {"name": "Таврия/двухэтажный состав", "route": "Симферополь - Москва", "link": "https://rasp.yandex.ru/thread/R_028S_63438"},
-    "012М": {"name": "Фирменный, Анапа-Москва", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_012M_112"},
-    "011Э": {"name": "Фирменный, Анапа-Москва", "route": "Анапа - Москва", "link": "https://rasp.yandex.ru/thread/R_011YE_112"}, 
+    "027С": {"name": "Таврия/двухэтажный состав", "route": "Симферополь — Москва", "link": "https://rasp.yandex.ru/thread/R_027S_63438"},
     "018М": {"name": "Обычный ПДС", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_018M_63438"},
-    "018Й": {"name": "Обычный ПДС", "route": "Симферополь - Москва", "link": "https://rasp.yandex.ru/thread/R_018J_63438"},
+    "018Й": {"name": "Обычный ПДС", "route": "Симферополь — Москва", "link": "https://rasp.yandex.ru/thread/R_018J_63438"},
+    "454М": {"name": "Обычный ПДС", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_454M_112"},
+    "180А": {"name": "Таврия", "route": "Санкт-Петербург — Симферополь", "link": "https://rasp.yandex.ru/thread/R_180A_112"},
+    "179С": {"name": "Таврия", "route": "Симферополь — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_179S_112"},
+    
+    "092М": {"name": "Таврия", "route": "Москва — Севастополь", "link": "https://rasp.yandex.ru/thread/R_092M_63438"},
+    "092С": {"name": "Таврия", "route": "Севастополь — Москва", "link": "https://rasp.yandex.ru/thread/R_092S_63438"},
+    
     "007А": {"name": "Таврия", "route": "Санкт-Петербург — Керчь", "link": "https://rasp.yandex.ru/thread/R_007A_63438"},
-    "008С": {"name": "Таврия", "route": "Керчь - Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_008S_63438"},
+    "008С": {"name": "Таврия", "route": "Керчь — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_008S_63438"},
     "068Х": {"name": "Обычный ПДС", "route": "Москва — Керчь", "link": "https://rasp.yandex.ru/thread/R_068X_63438"},
-    "068С": {"name": "Таврия", "route": "Керчь - Москва", "link": "https://rasp.yandex.ru/thread/R_068S_63438"},
-    "004М": {"name": "Фирменный, Кавказ/двухэтажный состав", "route": "Москва — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_004M_112"},
-    "930Я": {"name": "Жемчужина Кавказа", "route": "Москва — Москва Казанская Тур", "link": "https://rasp.yandex.ru/thread/R_930YA_112"}
+    "068С": {"name": "Таврия", "route": "Керчь — Москва", "link": "https://rasp.yandex.ru/thread/R_068S_63438"},
+    
+    # ==================== МОСКВА — КАВКАЗ ====================
+    "020С": {"name": "Тихий Дон", "route": "Москва — Ростов", "link": "https://rasp.yandex.ru/thread/R_020S_112"},
+    "019С": {"name": "Тихий Дон", "route": "Ростов — Москва", "link": "https://rasp.yandex.ru/thread/R_019S_112"},
+    
+    "104В": {"name": "Двухэтажный состав", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_104V_112"},
+    "104Ж": {"name": "Двухэтажный состав", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_104ZH_112"},
+    "102М": {"name": "Обычный ПДС", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_102M_112"},
+    "102С": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_102S_112"},
+    "084М": {"name": "Обычный ПДС", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_084M_112"},
+    "472М": {"name": "Обычный ПДС", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_472M_112"},
+    "083Э": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_083E_112"},
+    "101С": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_101S_112"},
+    "471С": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_471S_112"},
+    "103Ж": {"name": "Двухэтажный состав", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_103ZH_112"},
+    
+    "030С": {"name": "Премиум", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_030S_112"},
+    "030Й": {"name": "Премиум", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_030J_112"},
+    "249С": {"name": "Обычный ПДС", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_249S_112"},
+    "233С": {"name": "Обычный ПДС", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_233S_112"},
+    "287С": {"name": "Обычный ПДС", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_287S_112"},
+    "288М": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_288M_112"},
+    "434М": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_434M_112"},
+    "126Э": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_126E_112"},
+    
+    "012М": {"name": "Анапа-Москва", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_012M_112"},
+    "011Э": {"name": "Анапа-Москва", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_011E_112"},
+    "152М": {"name": "Обычный ПДС", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_152M_112"},
+    "156М": {"name": "Обычный ПДС", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_156M_112"},
+    "110В": {"name": "Обычный ПДС", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_110V_112"},
+    "109С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_109S_112"},
+    "217С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_217S_112"},
+    "155С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_155S_112"},
+    "567С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_567S_112"},
+    
+    "004М": {"name": "Кавказ/двухэтажный состав", "route": "Москва — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_004M_112"},
+    "003С": {"name": "Кавказ/двухэтажный состав", "route": "Кисловодск — Москва", "link": "https://rasp.yandex.ru/thread/R_003S_112"},
+    "144М": {"name": "Обычный ПДС", "route": "Москва — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_144M_112"},
+    "143Й": {"name": "Обычный ПДС", "route": "Кисловодск — Москва", "link": "https://rasp.yandex.ru/thread/R_143ZH_112"},
+    "050А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_050A_112"},
+    "049С": {"name": "Обычный ПДС", "route": "Кисловодск — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_049S_112"},
+    "230Й": {"name": "Обычный ПДС", "route": "Самара — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_230ZH_112"},
+    "810С": {"name": "Ласточка", "route": "Ростов-на-Дону — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_810S_112"},
+    
+    "061С": {"name": "Эльбрус", "route": "Нальчик — Москва", "link": "https://rasp.yandex.ru/thread/R_061S_112"},
+    "062М": {"name": "Обычный ПДС", "route": "Москва — Нальчик", "link": "https://rasp.yandex.ru/thread/R_062M_112"},
+    
+    # ==================== САНКТ-ПЕТЕРБУРГ — ЮГ ====================
+    "035С": {"name": "Северная Пальмира/двухэтажный состав", "route": "Адлер — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_035S_112"},
+    "036А": {"name": "Северная Пальмира/двухэтажный состав", "route": "Санкт-Петербург — Адлер", "link": "https://rasp.yandex.ru/thread/R_036A_112"},
+    "121С": {"name": "Обычный ПДС", "route": "Новороссийск — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_121S_112"},
+    "122В": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_122V_112"},
+    "260А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Анапа", "link": "https://rasp.yandex.ru/thread/R_260A_112"},
+    "278А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Анапа", "link": "https://rasp.yandex.ru/thread/R_278A_112"},
+    "259А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Анапа", "link": "https://rasp.yandex.ru/thread/R_259A_112"},
+    "259Э": {"name": "Обычный ПДС", "route": "Анапа — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_259E_112"},
+    "246А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Ейск", "link": "https://rasp.yandex.ru/thread/R_246A_112"},
+    "480А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Сухум", "link": "https://rasp.yandex.ru/thread/R_480A_112"},
+    "479С": {"name": "Обычный ПДС", "route": "Сухум — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_479S_112"},
+    "136А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Махачкала", "link": "https://rasp.yandex.ru/thread/R_136A_112"},
+    "135С": {"name": "Обычный ПДС", "route": "Махачкала — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_135S_112"},
+    
+    # ==================== РЕГИОНАЛЬНЫЕ НАПРАВЛЕНИЯ ====================
+    "642Ж": {"name": "Обычный ПДС", "route": "Адлер — Ростов-на-Дону", "link": "https://rasp.yandex.ru/thread/R_642ZH_112"},
+    "642С": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Адлер", "link": "https://rasp.yandex.ru/thread/R_642S_112"},
+    "442Э": {"name": "Обычный ПДС", "route": "Адлер — Ростов-на-Дону", "link": "https://rasp.yandex.ru/thread/R_442E_112"},
+    "442С": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Адлер", "link": "https://rasp.yandex.ru/thread/R_442S_112"},
+    "120С": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Таганрог", "link": "https://rasp.yandex.ru/thread/R_120S_112"},
+    "806Р": {"name": "Ласточка", "route": "Таганрог — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_806R_112"},
+    "806Э": {"name": "Ласточка", "route": "Новороссийск — Таганрог", "link": "https://rasp.yandex.ru/thread/R_806E_112"},
+    "808С": {"name": "Ласточка", "route": "Ростов-на-Дону — Аэропорт Сочи", "link": "https://rasp.yandex.ru/thread/R_808S_112"},
+    "153Э": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Москва", "link": "https://rasp.yandex.ru/thread/R_153E_112"},
+    
+    "492С": {"name": "Обычный ПДС", "route": "Адлер — Казань", "link": "https://rasp.yandex.ru/thread/R_492S_112"},
+    "491Э": {"name": "Обычный ПДС", "route": "Казань — Адлер", "link": "https://rasp.yandex.ru/thread/R_491E_112"},
+    
+    "360Ч": {"name": "Обычный ПДС", "route": "Калининград — Адлер", "link": "https://rasp.yandex.ru/thread/R_360CH_112"},
+    "360С": {"name": "Обычный ПДС", "route": "Адлер — Калининград", "link": "https://rasp.yandex.ru/thread/R_360S_112"},
+    "359С": {"name": "Обычный ПДС", "route": "Адлер — Калининград", "link": "https://rasp.yandex.ru/thread/R_359S_112"},
+    
+    "014С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Саратов", "link": "https://rasp.yandex.ru/thread/R_014S_112"},
+    "014Ж": {"name": "Обычный ПДС", "route": "Саратов — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_014ZH_112"},
+    "223С": {"name": "Обычный ПДС", "route": "Анапа — Саратов", "link": "https://rasp.yandex.ru/thread/R_223S_112"},
+    "469С": {"name": "Обычный ПДС", "route": "Новороссийск — Саратов", "link": "https://rasp.yandex.ru/thread/R_469S_112"},
+    
+    "289С": {"name": "Обычный ПДС", "route": "Анапа — Екатеринбург", "link": "https://rasp.yandex.ru/thread/R_289S_112"},
+    "290Э": {"name": "Обычный ПДС", "route": "Екатеринбург — Анапа", "link": "https://rasp.yandex.ru/thread/R_290E_112"},
+    "525С": {"name": "Обычный ПДС", "route": "Новороссийск — Екатеринбург", "link": "https://rasp.yandex.ru/thread/R_525S_112"},
+    "477С": {"name": "Обычный ПДС", "route": "Адлер — Челябинск", "link": "https://rasp.yandex.ru/thread/R_477S_112"},
+    "478У": {"name": "Обычный ПДС", "route": "Челябинск — Адлер", "link": "https://rasp.yandex.ru/thread/R_478U_112"},
+    
+    "326Э": {"name": "Обычный ПДС", "route": "Пермь — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_326E_112"},
+    "115Э": {"name": "Обычный ПДС", "route": "Адлер — Томск", "link": "https://rasp.yandex.ru/thread/R_115E_112"},
+    "116Н": {"name": "Обычный ПДС", "route": "Томск — Адлер", "link": "https://rasp.yandex.ru/thread/R_116N_112"},
+    
+    "507С": {"name": "Обычный ПДС", "route": "Новороссийск — Ижевск", "link": "https://rasp.yandex.ru/thread/R_507S_112"},
+    "520У": {"name": "Обычный ПДС", "route": "Орск — Анапа", "link": "https://rasp.yandex.ru/thread/R_520U_112"},
+    
+    "118Й": {"name": "Обычный ПДС", "route": "Самара — Адлер", "link": "https://rasp.yandex.ru/thread/R_118ZH_112"},
+    "114М": {"name": "Обычный ПДС", "route": "Москва — Краснодар", "link": "https://rasp.yandex.ru/thread/R_114M_112"},
+    
+    "506В": {"name": "Обычный ПДС", "route": "Тамбов — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_506V_112"},
+    "513С": {"name": "Обычный ПДС", "route": "Анапа — Тамбов", "link": "https://rasp.yandex.ru/thread/R_513S_112"},
+    "460В": {"name": "Обычный ПДС", "route": "Тамбов — Адлер", "link": "https://rasp.yandex.ru/thread/R_460V_112"},
+    "459С": {"name": "Обычный ПДС", "route": "Адлер — Тамбов", "link": "https://rasp.yandex.ru/thread/R_459S_112"},
+    
+    "283С": {"name": "Обычный ПДС", "route": "Анапа — Череповец", "link": "https://rasp.yandex.ru/thread/R_283S_112"},
+    "535С": {"name": "Обычный ПДС", "route": "Анапа — Смоленск", "link": "https://rasp.yandex.ru/thread/R_535S_112"},
+    
+    # ==================== СЕВЕРНЫЕ НАПРАВЛЕНИЯ ====================
+    "187С": {"name": "Обычный ПДС", "route": "Новороссийск — Архангельск", "link": "https://rasp.yandex.ru/thread/R_187S_112"},
+    "079С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Архангельск", "link": "https://rasp.yandex.ru/thread/R_079S_112"},
+    "293С": {"name": "Обычный ПДС", "route": "Анапа — Мурманск", "link": "https://rasp.yandex.ru/thread/R_293S_112"},
+    "294А": {"name": "Обычный ПДС", "route": "Мурманск — Анапа", "link": "https://rasp.yandex.ru/thread/R_294A_112"},
+    "286А": {"name": "Обычный ПДС", "route": "Мурманск — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_286A_112"},
+    "285С": {"name": "Обычный ПДС", "route": "Новороссийск — Мурманск", "link": "https://rasp.yandex.ru/thread/R_285S_112"},
+    "309С": {"name": "Обычный ПДС", "route": "Адлер — Воркута", "link": "https://rasp.yandex.ru/thread/R_309S_112"},
+    "310С": {"name": "Обычный ПДС", "route": "Воркута — Адлер", "link": "https://rasp.yandex.ru/thread/R_310S_112"},
+    "258Я": {"name": "Обычный ПДС", "route": "Печора — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_258YA_112"},
+    
+    # ==================== ДРУГИЕ ГОРОДА ====================
+    "490Б": {"name": "Обычный ПДС", "route": "Минск — Анапа", "link": "https://rasp.yandex.ru/thread/R_490B_112"},
+    "301С": {"name": "Обычный ПДС", "route": "Адлер — Минск", "link": "https://rasp.yandex.ru/thread/R_301S_112"},
+    
+    "303С": {"name": "Обычный ПДС", "route": "Сухум — Москва", "link": "https://rasp.yandex.ru/thread/R_303S_112"},
+    "304М": {"name": "Обычный ПДС", "route": "Москва — Сухум", "link": "https://rasp.yandex.ru/thread/R_304M_112"},
+    
+    "340Г": {"name": "Обычный ПДС", "route": "Нижний Новгород — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_340G_112"},
+    "037С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Нижний Новгород", "link": "https://rasp.yandex.ru/thread/R_037S_112"},
+    "038Г": {"name": "Обычный ПДС", "route": "Нижний Новгород — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_038G_112"},
+    
+    "381С": {"name": "Обычный ПДС", "route": "Гудермес — Москва", "link": "https://rasp.yandex.ru/thread/R_381S_112"},
+    "382Я": {"name": "Обычный ПДС", "route": "Москва — Гудермес", "link": "https://rasp.yandex.ru/thread/R_382YA_112"},
+    
+    # ==================== СИРИУС (ИМЕРЕТИНСКИЙ КУРОРТ) ====================
+    "558Х": {"name": "Двухэтажный состав", "route": "Москва — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_558KH_112"},
+    "044М": {"name": "Двухэтажный состав", "route": "Москва — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_044M_112"},
+    "043С": {"name": "Двухэтажный состав", "route": "Сириус (Имеретинский курорт) — Москва", "link": "https://rasp.yandex.ru/thread/R_043S_112"},
+    "547С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Белгород", "link": "https://rasp.yandex.ru/thread/R_547S_112"},
+    
+    # ==================== ОСОБЫЕ МАРШРУТЫ ====================
+    "930Я": {"name": "Жемчужина Кавказа", "route": "Москва — Москва Казанская Тур", "link": "https://rasp.yandex.ru/thread/R_930YA_112"},
 }
 
 LOCO_NICKNAMES = {
