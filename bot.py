@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import json
 from datetime import datetime, timezone, timedelta
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
@@ -249,7 +250,23 @@ LOCO_NICKNAMES = {
 }
 
 BLACKLIST = set()
-ACTIVE_USERS = set() # НОВОЕ: Для рассылки
+USERS_FILE = "active_users.json"
+
+def load_users():
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    except:
+        return set()
+
+def save_user(user_id):
+    users = load_users()
+    users.add(user_id)
+    try:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(list(users), f)
+    except Exception as e:
+        logging.error(f"Ошибка сохранения пользователя: {e}")
 
 # ==================== КОНСТАНТЫ КНОПОК ====================
 BTN_ADD_MULTIPLE = "➕ Добавить еще один ПС"
@@ -555,7 +572,7 @@ def get_admin_keyboard(user_id):
 # ==================== КОМАНДЫ ====================
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
-    ACTIVE_USERS.add(message.from_user.id) # НОВОЕ: Сохраняем для рассылки
+    save_user(message.from_user.id) # <--- СОХРАНЯЕМ ПОЛЬЗОВАТЕЛЯ
     if message.from_user.id in BLACKLIST:
         await message.answer("Вы заблокированы и не можете использовать бота."); return
     await state.clear()
@@ -600,10 +617,14 @@ async def cmd_banlist(message: types.Message):
     else: await message.answer(f"📋 Забаненные:\n" + "\n".join([f"• {uid}" for uid in BLACKLIST]))
 
 # НОВЫЕ КОМАНДЫ ДЛЯ АДМИНОВ
+# НОВЫЕ КОМАНДЫ ДЛЯ АДМИНОВ
 @dp.message(Command("admin_msg"))
 async def cmd_admin_msg(message: types.Message, state: FSMContext):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
-    if message.from_user.id not in admin_ids: await message.answer("❌ У вас нет прав."); return
+    if message.from_user.id not in admin_ids: 
+        await message.answer("❌ У вас нет прав."); return
+    
+    print(f"DEBUG: Админ {message.from_user.id} запустил /admin_msg") # Для проверки в логах Vercel
     await message.answer("✏️ Напишите сообщение, которое будет отправлено всем администраторам:")
     await state.set_state(Form.waiting_admin_msg)
 
@@ -611,16 +632,23 @@ async def cmd_admin_msg(message: types.Message, state: FSMContext):
 async def process_admin_msg(message: types.Message, state: FSMContext):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     text = message.text.strip()
+    
+    success_count = 0
     for aid in admin_ids:
-        try: await bot.send_message(aid, f"📢 <b>Сообщение от админа:</b>\n\n{text}")
-        except: pass
-    await message.answer("✅ Сообщение отправлено всем администраторам.")
+        try:
+            await bot.send_message(aid, f"📢 <b>Сообщение от админа:</b>\n\n{text}")
+            success_count += 1
+        except Exception as e:
+            logging.error(f"Ошибка отправки админу {aid}: {e}")
+            
+    await message.answer(f"✅ Сообщение отправлено {success_count} администраторам.")
     await state.clear()
 
 @dp.message(Command("broadcast"))
-async def cmd_broadcast(message: types.Message, state: FSMContext):
+async def cmd_broadcast(message: types.Message):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
-    if message.from_user.id not in admin_ids: await message.answer("❌ У вас нет прав."); return
+    if message.from_user.id not in admin_ids: 
+        await message.answer("❌ У вас нет прав."); return
     
     args = message.text.split(maxsplit=1)
     if len(args) < 2:
@@ -628,18 +656,24 @@ async def cmd_broadcast(message: types.Message, state: FSMContext):
         return
     
     text = args[1].strip()
-    await message.answer(f"⏳ Начинаю рассылку {len(ACTIVE_USERS)} пользователям...")
+    users = load_users() # Читаем из файла, а не из памяти
+    
+    if not users:
+        await message.answer("⚠️ Список пользователей пуст. Возможно, бот был перезагружен, и никто не нажимал /start после этого.")
+        return
+
+    await message.answer(f"⏳ Начинаю рассылку {len(users)} пользователям...")
     
     success_count = 0
-    for uid in list(ACTIVE_USERS):
+    for uid in users:
         try:
             await bot.send_message(uid, f"📢 <b>Важное сообщение от администрации:</b>\n\n{text}")
             success_count += 1
             await asyncio.sleep(0.05) # Задержка против спама
-        except:
-            pass # Если пользователь заблокировал бота
+        except Exception as e:
+            logging.warning(f"Не удалось отправить пользователю {uid}: {e}")
             
-    await message.answer(f"✅ Рассылка завершена! Доставлено: {success_count} из {len(ACTIVE_USERS)}")
+    await message.answer(f"✅ Рассылка завершена! Доставлено: {success_count} из {len(users)}")
 
 # ==================== ОСНОВНОЙ ПОТОК ====================
 @dp.message(Form.waiting_series_category)
