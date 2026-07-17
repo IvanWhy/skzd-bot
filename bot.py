@@ -289,6 +289,7 @@ BTN_UNKNOWN_NUMBER = "Номер неизвестен" # НОВОЕ
 BTN_PDS = "ПДС"
 BTN_GRUZ = "Грузовой поезд"
 BTN_REZERV = "Резерв"
+BTN_KHOZ = "Хозяйственный"
 BTN_LAB = "Лаборатория" # НОВОЕ
 BTN_SPLOTKA = "Сплотка"
 BTN_PEREGONKA = "Перегонка"
@@ -444,7 +445,8 @@ def build_train_info(data: dict) -> str:
             else: train_info = f"🚆 Поезд {train_num}"
         elif data["train_type"] == BTN_GRUZ: train_info = "🚛 Грузовой поезд"
         elif data["train_type"] == BTN_REZERV: train_info = "🔄 Резерв (свой ход)"
-        elif data["train_type"] == BTN_LAB: train_info = "🔬 Лаборатория / Рельсосмазыватель" # НОВОЕ
+        elif data["train_type"] == BTN_LAB: train_info = "🔬 Лаборатория / Рельсосмазыватель"
+        elif data["train_type"] == BTN_KHOZ: train_info = "🛠 Хозяйственный поезд"
         else: train_info = "🤷 Тип поезда неизвестен"
     return train_info
 
@@ -501,7 +503,8 @@ def get_series_keyboard(category):
 def get_train_type_keyboard():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=BTN_PDS)], [KeyboardButton(text=BTN_GRUZ)], 
-        [KeyboardButton(text=BTN_REZERV)], [KeyboardButton(text=BTN_LAB)], # НОВОЕ
+        [KeyboardButton(text=BTN_REZERV)], [KeyboardButton(text=BTN_LAB)],
+        [KeyboardButton(text=BTN_KHOZ)],
         [KeyboardButton(text=BTN_SPLOTKA)], [KeyboardButton(text=BTN_PEREGONKA)], [KeyboardButton(text=BTN_NO_INFO)]
     ], resize_keyboard=True)
 
@@ -717,7 +720,7 @@ async def process_number(message: types.Message, state: FSMContext):
 @dp.message(Form.waiting_train_type)
 async def process_train_type(message: types.Message, state: FSMContext):
     tt = message.text
-    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_LAB, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
+    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_LAB, BTN_KHOZ, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
         await message.answer("❌ Пожалуйста, выбери тип поезда из списка:"); return
     
     user_data[message.from_user.id]["train_type"] = tt
@@ -738,6 +741,10 @@ async def process_train_type(message: types.Message, state: FSMContext):
     elif tt == BTN_LAB: # НОВОЕ
         user_data[message.from_user.id]["train_number"] = "Лаборатория"
         await message.answer("🔬 В какую сторону движется лаборатория?", reply_markup=get_directions_keyboard())
+        await state.set_state(Form.waiting_direction)
+    elif tt == BTN_KHOZ:
+        user_data[message.from_user.id]["train_number"] = "Хозяйственный"
+        await message.answer("🛠 В какую сторону движется хозяйственный поезд?", reply_markup=get_directions_keyboard())
         await state.set_state(Form.waiting_direction)
     elif tt == BTN_SPLOTKA:
         user_data[message.from_user.id]["is_multiple"] = True
@@ -1302,6 +1309,11 @@ async def edit_train_type(message: types.Message, state: FSMContext):
         user_data[message.from_user.id]["is_multiple"] = False
         user_data[message.from_user.id]["is_transfer"] = False
         await return_to_summary(message, state, "✅ Тип изменён на <b>Лаборатория</b>")
+    elif tt == BTN_KHOZ:
+        user_data[message.from_user.id]["train_number"] = "Хозяйственный"
+        user_data[message.from_user.id]["is_multiple"] = False
+        user_data[message.from_user.id]["is_transfer"] = False
+        await return_to_summary(message, state, "✅ Тип изменён на <b>Хозяйственный</b>")
     elif tt == BTN_SPLOTKA:
         user_data[message.from_user.id]["is_multiple"] = True
         user_data[message.from_user.id]["is_transfer"] = False
