@@ -1417,7 +1417,7 @@ async def admin_reject(callback: types.CallbackQuery):
             "original_caption": callback.message.caption if callback.message.photo else None,
             "original_text": callback.message.text if not callback.message.photo else None,
             "user_id": uid,
-            "time": datetime.now().strftime("%H:%M")
+            "time": get_moscow_now().strftime("%H:%M")
         }
         await callback.message.answer("✏️ Напишите причину отклонения (до 300 символов):", 
                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=BTN_REJECT_CANCEL, callback_data=f"cancel_reject:{uid}")]]))
@@ -1446,7 +1446,7 @@ async def admin_reject(callback: types.CallbackQuery):
                 f"🚫 <b>Заявка отклонена</b>\n\n"
                 f"👤 <b>Пользователь:</b> {user_mention}\n"
                 f"👮 <b>Отклонил:</b> {admin_username}\n"
-                f"⏰ <b>Время:</b> {datetime.now().strftime('%H:%M')}\n"
+                f"⏰ <b>Время:</b> {get_moscow_now().strftime('%H:%M')}\n"
                 f"📋 <b>Причина:</b> {reason_text}",
                 parse_mode=ParseMode.HTML
             )
@@ -1574,7 +1574,7 @@ async def handle_reject_reason(message: types.Message):
                 try:
                     admin_username = f"@{message.from_user.username}" if message.from_user.username else f"ID:{message.from_user.id}"
                     user_mention = f"@{data.get('user_mention', 'пользователь')}"
-                    reject_time = data.get("time", datetime.now().strftime("%H:%M"))
+                    reject_time = data.get("time", get_moscow_now().strftime("%H:%M"))
                     
                     await bot.send_message(
                         MAIN_ADMIN_ID,
