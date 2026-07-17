@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import json
 from datetime import datetime, timezone, timedelta
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
@@ -21,6 +20,7 @@ import ast
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
+MAIN_ADMIN_ID = int(os.getenv("MAIN_ADMIN_ID", 0))
 
 if not BOT_TOKEN:
     raise ValueError("❌ BOT_TOKEN не найден в переменных окружения!")
@@ -57,7 +57,6 @@ DIRECTIONS = [
 ]
 
 SCHEDULES = {
-    # ==================== МОСКВА — КРЫМ ====================
     "028М": {"name": "Таврия/двухэтажный состав", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_028M_63438"},
     "027С": {"name": "Таврия/двухэтажный состав", "route": "Симферополь — Москва", "link": "https://rasp.yandex.ru/thread/R_027S_63438"},
     "018М": {"name": "Обычный ПДС", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_018M_63438"},
@@ -65,19 +64,14 @@ SCHEDULES = {
     "454М": {"name": "Обычный ПДС", "route": "Москва — Симферополь", "link": "https://rasp.yandex.ru/thread/R_454M_112"},
     "180А": {"name": "Таврия", "route": "Санкт-Петербург — Симферополь", "link": "https://rasp.yandex.ru/thread/R_180A_112"},
     "179С": {"name": "Таврия", "route": "Симферополь — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_179S_112"},
-    
     "092М": {"name": "Таврия", "route": "Москва — Севастополь", "link": "https://rasp.yandex.ru/thread/R_092M_63438"},
     "092С": {"name": "Таврия", "route": "Севастополь — Москва", "link": "https://rasp.yandex.ru/thread/R_092S_63438"},
-    
     "007А": {"name": "Таврия", "route": "Санкт-Петербург — Керчь", "link": "https://rasp.yandex.ru/thread/R_007A_63438"},
     "008С": {"name": "Таврия", "route": "Керчь — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_008S_63438"},
     "068Х": {"name": "Обычный ПДС", "route": "Москва — Керчь", "link": "https://rasp.yandex.ru/thread/R_068X_63438"},
     "068С": {"name": "Таврия", "route": "Керчь — Москва", "link": "https://rasp.yandex.ru/thread/R_068S_63438"},
-    
-    # ==================== МОСКВА — КАВКАЗ ====================
     "020С": {"name": "Тихий Дон", "route": "Москва — Ростов", "link": "https://rasp.yandex.ru/thread/R_020S_112"},
     "019С": {"name": "Тихий Дон", "route": "Ростов — Москва", "link": "https://rasp.yandex.ru/thread/R_019S_112"},
-    
     "104В": {"name": "Двухэтажный состав", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_104V_112"},
     "104Ж": {"name": "Двухэтажный состав", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_104ZH_112"},
     "102М": {"name": "Обычный ПДС", "route": "Москва — Адлер", "link": "https://rasp.yandex.ru/thread/R_102M_112"},
@@ -88,7 +82,6 @@ SCHEDULES = {
     "101С": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_101S_112"},
     "471С": {"name": "Обычный ПДС", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_471S_112"},
     "103Ж": {"name": "Двухэтажный состав", "route": "Адлер — Москва", "link": "https://rasp.yandex.ru/thread/R_103ZH_112"},
-    
     "030С": {"name": "Премиум", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_030S_112"},
     "030Й": {"name": "Премиум", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_030J_112"},
     "249С": {"name": "Обычный ПДС", "route": "Новороссийск — Москва", "link": "https://rasp.yandex.ru/thread/R_249S_112"},
@@ -97,7 +90,6 @@ SCHEDULES = {
     "288М": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_288M_112"},
     "434М": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_434M_112"},
     "126Э": {"name": "Обычный ПДС", "route": "Москва — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_126E_112"},
-    
     "012М": {"name": "Анапа-Москва", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_012M_112"},
     "011Э": {"name": "Анапа-Москва", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_011E_112"},
     "152М": {"name": "Обычный ПДС", "route": "Москва — Анапа", "link": "https://rasp.yandex.ru/thread/R_152M_112"},
@@ -107,7 +99,6 @@ SCHEDULES = {
     "217С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_217S_112"},
     "155С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_155S_112"},
     "567С": {"name": "Обычный ПДС", "route": "Анапа — Москва", "link": "https://rasp.yandex.ru/thread/R_567S_112"},
-    
     "004М": {"name": "Кавказ/двухэтажный состав", "route": "Москва — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_004M_112"},
     "003С": {"name": "Кавказ/двухэтажный состав", "route": "Кисловодск — Москва", "link": "https://rasp.yandex.ru/thread/R_003S_112"},
     "144М": {"name": "Обычный ПДС", "route": "Москва — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_144M_112"},
@@ -116,11 +107,8 @@ SCHEDULES = {
     "049С": {"name": "Обычный ПДС", "route": "Кисловодск — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_049S_112"},
     "230Й": {"name": "Обычный ПДС", "route": "Самара — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_230ZH_112"},
     "810С": {"name": "Ласточка", "route": "Ростов-на-Дону — Кисловодск", "link": "https://rasp.yandex.ru/thread/R_810S_112"},
-    
     "061С": {"name": "Эльбрус", "route": "Нальчик — Москва", "link": "https://rasp.yandex.ru/thread/R_061S_112"},
     "062М": {"name": "Обычный ПДС", "route": "Москва — Нальчик", "link": "https://rasp.yandex.ru/thread/R_062M_112"},
-    
-    # ==================== САНКТ-ПЕТЕРБУРГ — ЮГ ====================
     "035С": {"name": "Северная Пальмира/двухэтажный состав", "route": "Адлер — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_035S_112"},
     "036А": {"name": "Северная Пальмира/двухэтажный состав", "route": "Санкт-Петербург — Адлер", "link": "https://rasp.yandex.ru/thread/R_036A_112"},
     "121С": {"name": "Обычный ПДС", "route": "Новороссийск — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_121S_112"},
@@ -134,8 +122,6 @@ SCHEDULES = {
     "479С": {"name": "Обычный ПДС", "route": "Сухум — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_479S_112"},
     "136А": {"name": "Обычный ПДС", "route": "Санкт-Петербург — Махачкала", "link": "https://rasp.yandex.ru/thread/R_136A_112"},
     "135С": {"name": "Обычный ПДС", "route": "Махачкала — Санкт-Петербург", "link": "https://rasp.yandex.ru/thread/R_135S_112"},
-    
-    # ==================== РЕГИОНАЛЬНЫЕ НАПРАВЛЕНИЯ ====================
     "642Ж": {"name": "Обычный ПДС", "route": "Адлер — Ростов-на-Дону", "link": "https://rasp.yandex.ru/thread/R_642ZH_112"},
     "642С": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Адлер", "link": "https://rasp.yandex.ru/thread/R_642S_112"},
     "442Э": {"name": "Обычный ПДС", "route": "Адлер — Ростов-на-Дону", "link": "https://rasp.yandex.ru/thread/R_442E_112"},
@@ -145,44 +131,33 @@ SCHEDULES = {
     "806Э": {"name": "Ласточка", "route": "Новороссийск — Таганрог", "link": "https://rasp.yandex.ru/thread/R_806E_112"},
     "808С": {"name": "Ласточка", "route": "Ростов-на-Дону — Аэропорт Сочи", "link": "https://rasp.yandex.ru/thread/R_808S_112"},
     "153Э": {"name": "Обычный ПДС", "route": "Ростов-на-Дону — Москва", "link": "https://rasp.yandex.ru/thread/R_153E_112"},
-    
     "492С": {"name": "Обычный ПДС", "route": "Адлер — Казань", "link": "https://rasp.yandex.ru/thread/R_492S_112"},
     "491Э": {"name": "Обычный ПДС", "route": "Казань — Адлер", "link": "https://rasp.yandex.ru/thread/R_491E_112"},
-    
     "360Ч": {"name": "Обычный ПДС", "route": "Калининград — Адлер", "link": "https://rasp.yandex.ru/thread/R_360CH_112"},
     "360С": {"name": "Обычный ПДС", "route": "Адлер — Калининград", "link": "https://rasp.yandex.ru/thread/R_360S_112"},
     "359С": {"name": "Обычный ПДС", "route": "Адлер — Калининград", "link": "https://rasp.yandex.ru/thread/R_359S_112"},
-    
     "014С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Саратов", "link": "https://rasp.yandex.ru/thread/R_014S_112"},
     "014Ж": {"name": "Обычный ПДС", "route": "Саратов — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_014ZH_112"},
     "223С": {"name": "Обычный ПДС", "route": "Анапа — Саратов", "link": "https://rasp.yandex.ru/thread/R_223S_112"},
     "469С": {"name": "Обычный ПДС", "route": "Новороссийск — Саратов", "link": "https://rasp.yandex.ru/thread/R_469S_112"},
-    
     "289С": {"name": "Обычный ПДС", "route": "Анапа — Екатеринбург", "link": "https://rasp.yandex.ru/thread/R_289S_112"},
     "290Э": {"name": "Обычный ПДС", "route": "Екатеринбург — Анапа", "link": "https://rasp.yandex.ru/thread/R_290E_112"},
     "525С": {"name": "Обычный ПДС", "route": "Новороссийск — Екатеринбург", "link": "https://rasp.yandex.ru/thread/R_525S_112"},
     "477С": {"name": "Обычный ПДС", "route": "Адлер — Челябинск", "link": "https://rasp.yandex.ru/thread/R_477S_112"},
     "478У": {"name": "Обычный ПДС", "route": "Челябинск — Адлер", "link": "https://rasp.yandex.ru/thread/R_478U_112"},
-    
     "326Э": {"name": "Обычный ПДС", "route": "Пермь — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_326E_112"},
     "115Э": {"name": "Обычный ПДС", "route": "Адлер — Томск", "link": "https://rasp.yandex.ru/thread/R_115E_112"},
     "116Н": {"name": "Обычный ПДС", "route": "Томск — Адлер", "link": "https://rasp.yandex.ru/thread/R_116N_112"},
-    
     "507С": {"name": "Обычный ПДС", "route": "Новороссийск — Ижевск", "link": "https://rasp.yandex.ru/thread/R_507S_112"},
     "520У": {"name": "Обычный ПДС", "route": "Орск — Анапа", "link": "https://rasp.yandex.ru/thread/R_520U_112"},
-    
     "118Й": {"name": "Обычный ПДС", "route": "Самара — Адлер", "link": "https://rasp.yandex.ru/thread/R_118ZH_112"},
     "114М": {"name": "Обычный ПДС", "route": "Москва — Краснодар", "link": "https://rasp.yandex.ru/thread/R_114M_112"},
-    
     "506В": {"name": "Обычный ПДС", "route": "Тамбов — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_506V_112"},
     "513С": {"name": "Обычный ПДС", "route": "Анапа — Тамбов", "link": "https://rasp.yandex.ru/thread/R_513S_112"},
     "460В": {"name": "Обычный ПДС", "route": "Тамбов — Адлер", "link": "https://rasp.yandex.ru/thread/R_460V_112"},
     "459С": {"name": "Обычный ПДС", "route": "Адлер — Тамбов", "link": "https://rasp.yandex.ru/thread/R_459S_112"},
-    
     "283С": {"name": "Обычный ПДС", "route": "Анапа — Череповец", "link": "https://rasp.yandex.ru/thread/R_283S_112"},
     "535С": {"name": "Обычный ПДС", "route": "Анапа — Смоленск", "link": "https://rasp.yandex.ru/thread/R_535S_112"},
-    
-    # ==================== СЕВЕРНЫЕ НАПРАВЛЕНИЯ ====================
     "187С": {"name": "Обычный ПДС", "route": "Новороссийск — Архангельск", "link": "https://rasp.yandex.ru/thread/R_187S_112"},
     "079С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Архангельск", "link": "https://rasp.yandex.ru/thread/R_079S_112"},
     "293С": {"name": "Обычный ПДС", "route": "Анапа — Мурманск", "link": "https://rasp.yandex.ru/thread/R_293S_112"},
@@ -192,28 +167,19 @@ SCHEDULES = {
     "309С": {"name": "Обычный ПДС", "route": "Адлер — Воркута", "link": "https://rasp.yandex.ru/thread/R_309S_112"},
     "310С": {"name": "Обычный ПДС", "route": "Воркута — Адлер", "link": "https://rasp.yandex.ru/thread/R_310S_112"},
     "258Я": {"name": "Обычный ПДС", "route": "Печора — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_258YA_112"},
-    
-    # ==================== ДРУГИЕ ГОРОДА ====================
     "490Б": {"name": "Обычный ПДС", "route": "Минск — Анапа", "link": "https://rasp.yandex.ru/thread/R_490B_112"},
     "301С": {"name": "Обычный ПДС", "route": "Адлер — Минск", "link": "https://rasp.yandex.ru/thread/R_301S_112"},
-    
     "303С": {"name": "Обычный ПДС", "route": "Сухум — Москва", "link": "https://rasp.yandex.ru/thread/R_303S_112"},
     "304М": {"name": "Обычный ПДС", "route": "Москва — Сухум", "link": "https://rasp.yandex.ru/thread/R_304M_112"},
-    
     "340Г": {"name": "Обычный ПДС", "route": "Нижний Новгород — Новороссийск", "link": "https://rasp.yandex.ru/thread/R_340G_112"},
     "037С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Нижний Новгород", "link": "https://rasp.yandex.ru/thread/R_037S_112"},
     "038Г": {"name": "Обычный ПДС", "route": "Нижний Новгород — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_038G_112"},
-    
     "381С": {"name": "Обычный ПДС", "route": "Гудермес — Москва", "link": "https://rasp.yandex.ru/thread/R_381S_112"},
     "382Я": {"name": "Обычный ПДС", "route": "Москва — Гудермес", "link": "https://rasp.yandex.ru/thread/R_382YA_112"},
-    
-    # ==================== СИРИУС (ИМЕРЕТИНСКИЙ КУРОРТ) ====================
     "558Х": {"name": "Двухэтажный состав", "route": "Москва — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_558KH_112"},
     "044М": {"name": "Двухэтажный состав", "route": "Москва — Сириус (Имеретинский курорт)", "link": "https://rasp.yandex.ru/thread/R_044M_112"},
     "043С": {"name": "Двухэтажный состав", "route": "Сириус (Имеретинский курорт) — Москва", "link": "https://rasp.yandex.ru/thread/R_043S_112"},
     "547С": {"name": "Обычный ПДС", "route": "Сириус (Имеретинский курорт) — Белгород", "link": "https://rasp.yandex.ru/thread/R_547S_112"},
-    
-    # ==================== ОСОБЫЕ МАРШРУТЫ ====================
     "930Я": {"name": "Жемчужина Кавказа", "route": "Москва — Москва Казанская Тур", "link": "https://rasp.yandex.ru/thread/R_930YA_112"},
 }
 
@@ -250,23 +216,10 @@ LOCO_NICKNAMES = {
 }
 
 BLACKLIST = set()
-USERS_FILE = "active_users.json"
+ACTIVE_USERS = set()  # Храним в памяти (сбросится при рестарте, но работает на Vercel)
 
-def load_users():
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            return set(json.load(f))
-    except:
-        return set()
-
-def save_user(user_id):
-    users = load_users()
-    users.add(user_id)
-    try:
-        with open(USERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(list(users), f)
-    except Exception as e:
-        logging.error(f"Ошибка сохранения пользователя: {e}")
+def add_active_user(user_id):
+    ACTIVE_USERS.add(user_id)
 
 # ==================== КОНСТАНТЫ КНОПОК ====================
 BTN_ADD_MULTIPLE = "➕ Добавить еще один ПС"
@@ -284,13 +237,13 @@ BTN_REJECT_DUPLICATE = "🔁 Дубликат"
 BTN_REJECT_NO_PHOTO = "📷 Нет фото"
 BTN_REJECT_CUSTOM = "✏️ Своя причина"
 BTN_REJECT_CANCEL = "⬅️ Отмена"
-BTN_UNKNOWN_NUMBER = "Номер неизвестен" # НОВОЕ
+BTN_UNKNOWN_NUMBER = "Номер неизвестен"
 
 BTN_PDS = "ПДС"
 BTN_GRUZ = "Грузовой поезд"
 BTN_REZERV = "Резерв"
 BTN_KHOZ = "Хозяйственный"
-BTN_LAB = "Лаборатория" # НОВОЕ
+BTN_LAB = "Лаборатория"
 BTN_SPLOTKA = "Сплотка"
 BTN_PEREGONKA = "Перегонка"
 BTN_NO_INFO = "Нет информации"
@@ -359,9 +312,7 @@ class Form(StatesGroup):
     edit_transfer_train_select = State()
     edit_transfer_train_number_manual = State()
     
-    # НОВОЕ: Состояния для админских команд
     waiting_admin_msg = State()
-    waiting_broadcast = State()
 
 user_data = {}
 pending_publications = {}
@@ -508,7 +459,7 @@ def get_train_type_keyboard():
         [KeyboardButton(text=BTN_SPLOTKA)], [KeyboardButton(text=BTN_PEREGONKA)], [KeyboardButton(text=BTN_NO_INFO)]
     ], resize_keyboard=True)
 
-def get_number_keyboard(): # НОВОЕ: Клавиатура только для ввода номера
+def get_number_keyboard():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=BTN_UNKNOWN_NUMBER)],
         [KeyboardButton(text=BTN_BACK)]
@@ -575,7 +526,7 @@ def get_admin_keyboard(user_id):
 # ==================== КОМАНДЫ ====================
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
-    save_user(message.from_user.id) # <--- СОХРАНЯЕМ ПОЛЬЗОВАТЕЛЯ
+    add_active_user(message.from_user.id)
     if message.from_user.id in BLACKLIST:
         await message.answer("Вы заблокированы и не можете использовать бота."); return
     await state.clear()
@@ -619,15 +570,11 @@ async def cmd_banlist(message: types.Message):
     if not BLACKLIST: await message.answer("📋 Черный список пуст.")
     else: await message.answer(f"📋 Забаненные:\n" + "\n".join([f"• {uid}" for uid in BLACKLIST]))
 
-# НОВЫЕ КОМАНДЫ ДЛЯ АДМИНОВ
-# НОВЫЕ КОМАНДЫ ДЛЯ АДМИНОВ
 @dp.message(Command("admin_msg"))
 async def cmd_admin_msg(message: types.Message, state: FSMContext):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if message.from_user.id not in admin_ids: 
         await message.answer("❌ У вас нет прав."); return
-    
-    print(f"DEBUG: Админ {message.from_user.id} запустил /admin_msg") # Для проверки в логах Vercel
     await message.answer("✏️ Напишите сообщение, которое будет отправлено всем администраторам:")
     await state.set_state(Form.waiting_admin_msg)
 
@@ -635,7 +582,6 @@ async def cmd_admin_msg(message: types.Message, state: FSMContext):
 async def process_admin_msg(message: types.Message, state: FSMContext):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     text = message.text.strip()
-    
     success_count = 0
     for aid in admin_ids:
         try:
@@ -643,7 +589,6 @@ async def process_admin_msg(message: types.Message, state: FSMContext):
             success_count += 1
         except Exception as e:
             logging.error(f"Ошибка отправки админу {aid}: {e}")
-            
     await message.answer(f"✅ Сообщение отправлено {success_count} администраторам.")
     await state.clear()
 
@@ -659,7 +604,7 @@ async def cmd_broadcast(message: types.Message):
         return
     
     text = args[1].strip()
-    users = load_users() # Читаем из файла, а не из памяти
+    users = ACTIVE_USERS  # ИСПРАВЛЕНО: используем память, а не файл
     
     if not users:
         await message.answer("⚠️ Список пользователей пуст. Возможно, бот был перезагружен, и никто не нажимал /start после этого.")
@@ -672,7 +617,7 @@ async def cmd_broadcast(message: types.Message):
         try:
             await bot.send_message(uid, f"📢 <b>Важное сообщение от администрации:</b>\n\n{text}")
             success_count += 1
-            await asyncio.sleep(0.05) # Задержка против спама
+            await asyncio.sleep(0.05)
         except Exception as e:
             logging.warning(f"Не удалось отправить пользователю {uid}: {e}")
             
@@ -694,7 +639,7 @@ async def process_series(message: types.Message, state: FSMContext):
     category = user_data[message.from_user.id]["category"]
     if message.text not in TRAIN_SERIES[category]: await message.answer("❌ Пожалуйста, выбери серию из списка:"); return
     user_data[message.from_user.id]["series"] = message.text
-    await message.answer(f"🚂 Выбрана серия: <b>{message.text}</b>\n\nТеперь введи <b>номер ПС</b> (только цифры) или нажми кнопку:", reply_markup=get_number_keyboard()) # НОВОЕ
+    await message.answer(f"🚂 Выбрана серия: <b>{message.text}</b>\n\nТеперь введи <b>номер ПС</b> (только цифры) или нажми кнопку:", reply_markup=get_number_keyboard())
     await state.set_state(Form.waiting_number)
 
 @dp.message(Form.waiting_number)
@@ -702,14 +647,13 @@ async def process_number(message: types.Message, state: FSMContext):
     if message.text == BTN_BACK:
         await message.answer(f"🚂 Выбрана серия: <b>{user_data[message.from_user.id]['series']}</b>\n\nТеперь введи <b>номер ПС</b>:", reply_markup=get_number_keyboard())
         return
-    if message.text == BTN_UNKNOWN_NUMBER: # НОВОЕ
+    if message.text == BTN_UNKNOWN_NUMBER:
         user_data[message.from_user.id]["number"] = "Номер неизвестен"
         await message.answer("🔢 Номер ПС: <b>Номер неизвестен</b>\n\nКакой это тип поезда?", reply_markup=get_train_type_keyboard())
         await state.set_state(Form.waiting_train_type)
         return
     
     number = message.text.strip()
-    # НОВОЕ: ПРОВЕРКА ТОЛЬКО НА ЦИФРЫ
     if not number.isdigit() or len(number) > 10:
         await message.answer("❌ Некорректный номер. Введи только цифры (или нажми 'Номер неизвестен'):")
         return
@@ -738,7 +682,7 @@ async def process_train_type(message: types.Message, state: FSMContext):
         user_data[message.from_user.id]["train_number"] = "Резерв"
         await message.answer("🔄 В какую сторону едет локомотив?", reply_markup=get_directions_keyboard())
         await state.set_state(Form.waiting_direction)
-    elif tt == BTN_LAB: # НОВОЕ
+    elif tt == BTN_LAB:
         user_data[message.from_user.id]["train_number"] = "Лаборатория"
         await message.answer("🔬 В какую сторону движется лаборатория?", reply_markup=get_directions_keyboard())
         await state.set_state(Form.waiting_direction)
@@ -1288,7 +1232,8 @@ async def edit_number(message: types.Message, state: FSMContext):
 @dp.message(Form.edit_train_type)
 async def edit_train_type(message: types.Message, state: FSMContext):
     tt = message.text
-    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_LAB, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
+    # ИСПРАВЛЕНО: добавлен BTN_KHOZ в список разрешенных
+    if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_LAB, BTN_KHOZ, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
         await message.answer("❌ Пожалуйста, выбери тип поезда из списка:"); return
     user_data[message.from_user.id]["train_type"] = tt
     if tt == BTN_PDS:
@@ -1304,7 +1249,7 @@ async def edit_train_type(message: types.Message, state: FSMContext):
         user_data[message.from_user.id]["is_multiple"] = False
         user_data[message.from_user.id]["is_transfer"] = False
         await return_to_summary(message, state, "✅ Тип изменён на <b>Резерв</b>")
-    elif tt == BTN_LAB: # НОВОЕ
+    elif tt == BTN_LAB:
         user_data[message.from_user.id]["train_number"] = "Лаборатория"
         user_data[message.from_user.id]["is_multiple"] = False
         user_data[message.from_user.id]["is_transfer"] = False
@@ -1423,7 +1368,6 @@ async def admin_publish(callback: types.CallbackQuery):
     if callback.from_user.id not in admin_ids:
         await callback.answer("❌ У вас нет прав", show_alert=True); return
     
-    # НОВОЕ: ЗАЩИТА ОТ ДВОЙНОЙ ОБРАБОТКИ
     if uid not in pending_publications:
         await callback.answer("⚠️ Эта заявка уже обработана другим администратором!", show_alert=True)
         return
@@ -1450,34 +1394,72 @@ async def admin_reject(callback: types.CallbackQuery):
     parts = callback.data.split(":")
     uid = int(parts[1])
     reason_code = parts[2] if len(parts) > 2 else None
+    
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids:
         await callback.answer("❌ У вас нет прав", show_alert=True); return
     
-    # НОВОЕ: ЗАЩИТА ОТ ДВОЙНОЙ ОБРАБОТКИ
     if uid not in pending_publications:
         await callback.answer("⚠️ Эта заявка уже обработана другим администратором!", show_alert=True)
         return
         
     pending_publications.pop(uid, None)
     
+    reason_text = ""
     if reason_code and reason_code in REJECT_REASONS:
         reason_text = REJECT_REASONS[reason_code]
-        if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
-        else: await callback.message.edit_text(text=callback.message.text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
-        try: await bot.send_message(uid, f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\nВы можете отправить новую заявку командой /start", parse_mode=ParseMode.HTML)
-        except: pass
-        await callback.answer("❌ Заявка отклонена", show_alert=True)
     elif reason_code == "custom":
-        pending_rejections[uid] = {"admin_id": callback.from_user.id, "message_id": callback.message.message_id, "chat_id": callback.message.chat.id, "is_photo": bool(callback.message.photo), "original_caption": callback.message.caption if callback.message.photo else None, "original_text": callback.message.text if not callback.message.photo else None}
-        await callback.message.answer("✏️ Напишите причину отклонения (до 300 символов):", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=BTN_REJECT_CANCEL, callback_data=f"cancel_reject:{uid}")]]))
+        pending_rejections[uid] = {
+            "admin_id": callback.from_user.id,
+            "message_id": callback.message.message_id,
+            "chat_id": callback.message.chat.id,
+            "is_photo": bool(callback.message.photo),
+            "original_caption": callback.message.caption if callback.message.photo else None,
+            "original_text": callback.message.text if not callback.message.photo else None,
+            "user_id": uid,
+            "time": datetime.now().strftime("%H:%M")
+        }
+        await callback.message.answer("✏️ Напишите причину отклонения (до 300 символов):", 
+                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=BTN_REJECT_CANCEL, callback_data=f"cancel_reject:{uid}")]]))
         await callback.answer()
+        return
     else:
-        if callback.message.photo: await callback.message.edit_caption(caption=callback.message.caption + "\n\n❌ <b>ОТКЛОНЕНО</b>", parse_mode=ParseMode.HTML)
-        else: await callback.message.edit_text(text=callback.message.text + "\n\n❌ <b>ОТКЛОНЕНО</b>", parse_mode=ParseMode.HTML)
-        await callback.answer("❌ Пост отклонен", show_alert=True)
-        try: await bot.send_message(uid, "❌ Ваша информация отклонена. Пожалуйста, проверьте данные и отправьте заново.")
-        except: pass
+        reason_text = "Причина не указана"
+    
+    # Уведомляем пользователя
+    user_mention = "пользователь"
+    try:
+        if callback.message.caption and "от @" in callback.message.caption:
+            user_mention = "@" + callback.message.caption.split("от @")[1].split("</b>")[0]
+        elif callback.message.text and "от @" in callback.message.text:
+            user_mention = "@" + callback.message.text.split("от @")[1].split("</b>")[0]
+        await bot.send_message(uid, f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\nВы можете отправить новую заявку командой /start", parse_mode=ParseMode.HTML)
+    except:
+        pass
+    
+    # УВЕДОМЛЕНИЕ ГЛАВНОМУ АДМИНУ
+    if MAIN_ADMIN_ID and reason_text:
+        try:
+            admin_username = f"@{callback.from_user.username}" if callback.from_user.username else f"ID:{callback.from_user.id}"
+            await bot.send_message(
+                MAIN_ADMIN_ID,
+                f"🚫 <b>Заявка отклонена</b>\n\n"
+                f"👤 <b>Пользователь:</b> {user_mention}\n"
+                f"👮 <b>Отклонил:</b> {admin_username}\n"
+                f"⏰ <b>Время:</b> {datetime.now().strftime('%H:%M')}\n"
+                f"📋 <b>Причина:</b> {reason_text}",
+                parse_mode=ParseMode.HTML
+            )
+        except Exception as e:
+            logging.error(f"Ошибка уведомления главному админу: {e}")
+    
+    # Редактируем сообщение в чате админов
+    if callback.message.photo:
+        await callback.message.edit_caption(caption=callback.message.caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
+    else:
+        await callback.message.edit_text(text=callback.message.text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
+    
+    await callback.answer("❌ Заявка отклонена", show_alert=True)
 
 @dp.callback_query(F.data.startswith("cancel_reject:"))
 async def cancel_reject(callback: types.CallbackQuery):
@@ -1494,7 +1476,6 @@ async def admin_ban(callback: types.CallbackQuery):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
     if callback.from_user.id not in admin_ids: await callback.answer("❌ У вас нет прав", show_alert=True); return
     
-    # НОВОЕ: ЗАПРЕТ БАНА АДМИНОВ
     if uid in admin_ids:
         await callback.answer("❌ Нельзя забанить другого администратора!", show_alert=True)
         return
@@ -1562,20 +1543,51 @@ async def root():
 @dp.message(F.text)
 async def handle_reject_reason(message: types.Message):
     admin_ids = ADMIN_CHAT_ID if isinstance(ADMIN_CHAT_ID, list) else [ADMIN_CHAT_ID]
-    if message.from_user.id not in admin_ids: return
+    if message.from_user.id not in admin_ids:
+        return
+    
     for uid, data in list(pending_rejections.items()):
         if data["admin_id"] == message.from_user.id:
             reason_text = message.text.strip()[:300]
+            
             try:
                 if data["is_photo"]:
                     original_caption = data.get("original_caption") or ""
-                    await bot.edit_message_caption(chat_id=data["chat_id"], message_id=data["message_id"], caption=original_caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
+                    await bot.edit_message_caption(chat_id=data["chat_id"], message_id=data["message_id"], 
+                                                  caption=original_caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", 
+                                                  parse_mode=ParseMode.HTML)
                 else:
                     original_text = data.get("original_text") or ""
-                    await bot.edit_message_text(chat_id=data["chat_id"], message_id=data["message_id"], text=original_text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
-            except Exception as e: logging.error(f"Ошибка редактирования сообщения: {e}")
-            try: await bot.send_message(uid, f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\nВы можете отправить новую заявку командой /start", parse_mode=ParseMode.HTML)
-            except: pass
+                    await bot.edit_message_text(chat_id=data["chat_id"], message_id=data["message_id"], 
+                                               text=original_text + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", 
+                                               parse_mode=ParseMode.HTML)
+            except Exception as e:
+                logging.error(f"Ошибка редактирования сообщения: {e}")
+            
+            try:
+                await bot.send_message(uid, f"❌ Ваша заявка отклонена.\n\n<b>Причина:</b> {reason_text}\n\nВы можете отправить новую заявку командой /start", parse_mode=ParseMode.HTML)
+            except:
+                pass
+            
+            # УВЕДОМЛЕНИЕ ГЛАВНОМУ АДМИНУ
+            if MAIN_ADMIN_ID:
+                try:
+                    admin_username = f"@{message.from_user.username}" if message.from_user.username else f"ID:{message.from_user.id}"
+                    user_mention = f"@{data.get('user_mention', 'пользователь')}"
+                    reject_time = data.get("time", datetime.now().strftime("%H:%M"))
+                    
+                    await bot.send_message(
+                        MAIN_ADMIN_ID,
+                        f"🚫 <b>Заявка отклонена</b>\n\n"
+                        f"👤 <b>Пользователь:</b> {user_mention}\n"
+                        f"👮 <b>Отклонил:</b> {admin_username}\n"
+                        f"⏰ <b>Время:</b> {reject_time}\n"
+                        f"📋 <b>Причина:</b> {reason_text}",
+                        parse_mode=ParseMode.HTML
+                    )
+                except Exception as e:
+                    logging.error(f"Ошибка уведомления главному админу: {e}")
+            
             pending_rejections.pop(uid, None)
             await message.answer("✅ Причина отклонения отправлена пользователю.")
             return
