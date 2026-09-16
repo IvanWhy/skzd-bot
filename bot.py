@@ -216,7 +216,7 @@ LOCO_NICKNAMES = {
 }
 
 BLACKLIST = set()
-ACTIVE_USERS = set()  # Храним в памяти (сбросится при рестарте, но работает на Vercel)
+ACTIVE_USERS = set()
 
 def add_active_user(user_id):
     ACTIVE_USERS.add(user_id)
@@ -259,6 +259,7 @@ class Form(StatesGroup):
     waiting_series_category = State()
     waiting_series = State()
     waiting_number = State()
+    waiting_loco_color = State()
     waiting_train_type = State()
     waiting_train_number = State()
     waiting_train_select = State()
@@ -407,8 +408,15 @@ def build_summary(user_id: int) -> str:
     train_info = build_train_info(data)
     has_photo = "photo_id" in data
     summary = f"📋 <b>Проверьте правильность информации:</b>\n\n"
+    
     if not (data.get("is_multiple") or data.get("is_transfer")):
-        summary += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
+        ps_name = get_loco_name(data['series'], data['number'])
+        if data['number'] == "Номер неизвестен" and data.get("loco_color"):
+            ps_name = f"{data['series']} ({data['loco_color']})"
+        elif data['number'] == "Номер неизвестен":
+            ps_name = f"{data['series']} (номер неизвестен)"
+        summary += f"🚂 <b>ПС:</b> {ps_name}\n"
+        
     summary += (f"{train_info}\n" f"🗺 <b>Направление:</b> {data['direction']}\n" f"📌 <b>Место:</b> {format_station(data['station'])}\n" f"🕒 <b>Актуальность:</b> {data['time']} ({today})\n" f"📸 <b>Фото:</b> {'есть' if has_photo else 'нет'}")
     if data.get("description"): summary += f"\n\n📝 <b>Описание:</b> {data['description']}"
     return summary
@@ -418,7 +426,12 @@ def build_channel_message(data: dict) -> str:
     train_info = build_train_info(data)
     message = ""
     if not (data.get("is_multiple") or data.get("is_transfer")):
-        message += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
+        ps_name = get_loco_name(data['series'], data['number'])
+        if data['number'] == "Номер неизвестен" and data.get("loco_color"):
+            ps_name = f"{data['series']} ({data['loco_color']})"
+        elif data['number'] == "Номер неизвестен":
+            ps_name = f"{data['series']} (номер неизвестен)"
+        message += f"🚂 <b>ПС:</b> {ps_name}\n"
     message += train_info + "\n" + f"🗺 <b>Направление:</b> {data['direction']}\n" + f"📌 <b>Место:</b> {format_station(data['station'])}\n" + f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
     if data.get("description"): message += f"\n\n📝 <b>Описание:</b> {data['description']}"
     return message
@@ -428,7 +441,12 @@ def build_admin_message(data: dict, user) -> str:
     train_info = build_train_info(data)
     admin_msg = f"🚂 <b>Новая заявка от @{user.username or user.first_name}</b>\n\n"
     if not (data.get("is_multiple") or data.get("is_transfer")):
-        admin_msg += f"🚂 <b>ПС:</b> {get_loco_name(data['series'], data['number'])}\n"
+        ps_name = get_loco_name(data['series'], data['number'])
+        if data['number'] == "Номер неизвестен" and data.get("loco_color"):
+            ps_name = f"{data['series']} ({data['loco_color']})"
+        elif data['number'] == "Номер неизвестен":
+            ps_name = f"{data['series']} (номер неизвестен)"
+        admin_msg += f"🚂 <b>ПС:</b> {ps_name}\n"
     admin_msg += f"{train_info}\n" + f"🗺 <b>Направление:</b> {data['direction']}\n" + f"📌 <b>Место:</b> {format_station(data['station'])}\n" + f"🕒 <b>Актуальность:</b> {data['time']} ({today})"
     if data.get("description"): admin_msg += f"\n\n📝 <b>Описание:</b> {data['description']}"
     return admin_msg
@@ -604,7 +622,7 @@ async def cmd_broadcast(message: types.Message):
         return
     
     text = args[1].strip()
-    users = ACTIVE_USERS  # ИСПРАВЛЕНО: используем память, а не файл
+    users = ACTIVE_USERS
     
     if not users:
         await message.answer("⚠️ Список пользователей пуст. Возможно, бот был перезагружен, и никто не нажимал /start после этого.")
@@ -649,8 +667,15 @@ async def process_number(message: types.Message, state: FSMContext):
         return
     if message.text == BTN_UNKNOWN_NUMBER:
         user_data[message.from_user.id]["number"] = "Номер неизвестен"
-        await message.answer("🔢 Номер ПС: <b>Номер неизвестен</b>\n\nКакой это тип поезда?", reply_markup=get_train_type_keyboard())
-        await state.set_state(Form.waiting_train_type)
+        await message.answer(
+            "🎨 <b>Укажите окрас или отличительную особенность локомотива</b>\n\n"
+            "Например: <i>голубой, без названия, в рекламе, двухцветный, ТрансОйл</i>\n\n"
+            "Или нажми '⏭️ Пропустить', если окрас неизвестен:",
+            reply_markup=ReplyKeyboardMarkup(keyboard=[
+                [KeyboardButton(text="⏭️ Пропустить")]
+            ], resize_keyboard=True)
+        )
+        await state.set_state(Form.waiting_loco_color)
         return
     
     number = message.text.strip()
@@ -659,6 +684,30 @@ async def process_number(message: types.Message, state: FSMContext):
         return
     user_data[message.from_user.id]["number"] = number
     await message.answer(f"🔢 Номер ПС: <b>{number}</b>\n\nКакой это тип поезда?", reply_markup=get_train_type_keyboard())
+    await state.set_state(Form.waiting_train_type)
+
+@dp.message(Form.waiting_loco_color)
+async def process_loco_color(message: types.Message, state: FSMContext):
+    if message.text == "⏭️ Пропустить":
+        user_data[message.from_user.id]["loco_color"] = None
+    else:
+        color = message.text.strip()
+        if len(color) > 50:
+            await message.answer("❌ Слишком длинное описание. Попробуй короче (до 50 символов):")
+            return
+        user_data[message.from_user.id]["loco_color"] = color
+    
+    series = user_data[message.from_user.id]["series"]
+    
+    if user_data[message.from_user.id].get("loco_color"):
+        ps_name = f"{series} ({user_data[message.from_user.id]['loco_color']})"
+    else:
+        ps_name = series
+    
+    await message.answer(
+        f"🚂 <b>ПС:</b> {ps_name}\n\nКакой это тип поезда?",
+        reply_markup=get_train_type_keyboard()
+    )
     await state.set_state(Form.waiting_train_type)
 
 @dp.message(Form.waiting_train_type)
@@ -1232,7 +1281,6 @@ async def edit_number(message: types.Message, state: FSMContext):
 @dp.message(Form.edit_train_type)
 async def edit_train_type(message: types.Message, state: FSMContext):
     tt = message.text
-    # ИСПРАВЛЕНО: добавлен BTN_KHOZ в список разрешенных
     if tt not in [BTN_PDS, BTN_GRUZ, BTN_REZERV, BTN_LAB, BTN_KHOZ, BTN_SPLOTKA, BTN_PEREGONKA, BTN_NO_INFO]:
         await message.answer("❌ Пожалуйста, выбери тип поезда из списка:"); return
     user_data[message.from_user.id]["train_type"] = tt
@@ -1426,7 +1474,6 @@ async def admin_reject(callback: types.CallbackQuery):
     else:
         reason_text = "Причина не указана"
     
-    # Уведомляем пользователя
     user_mention = "пользователь"
     try:
         if callback.message.caption and "от @" in callback.message.caption:
@@ -1437,7 +1484,6 @@ async def admin_reject(callback: types.CallbackQuery):
     except:
         pass
     
-    # УВЕДОМЛЕНИЕ ГЛАВНОМУ АДМИНУ
     if MAIN_ADMIN_ID and reason_text:
         try:
             admin_username = f"@{callback.from_user.username}" if callback.from_user.username else f"ID:{callback.from_user.id}"
@@ -1453,7 +1499,6 @@ async def admin_reject(callback: types.CallbackQuery):
         except Exception as e:
             logging.error(f"Ошибка уведомления главному админу: {e}")
     
-    # Редактируем сообщение в чате админов
     if callback.message.photo:
         await callback.message.edit_caption(caption=callback.message.caption + f"\n\n❌ <b>ОТКЛОНЕНО</b>\nПричина: {reason_text}", parse_mode=ParseMode.HTML)
     else:
@@ -1569,7 +1614,6 @@ async def handle_reject_reason(message: types.Message):
             except:
                 pass
             
-            # УВЕДОМЛЕНИЕ ГЛАВНОМУ АДМИНУ
             if MAIN_ADMIN_ID:
                 try:
                     admin_username = f"@{message.from_user.username}" if message.from_user.username else f"ID:{message.from_user.id}"
